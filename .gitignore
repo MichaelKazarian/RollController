@@ -36,4 +36,7 @@
 .clang_complete
 .ccls
 
+# PROJECT
+include/
+lib/
 TAGS
