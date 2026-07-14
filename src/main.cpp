@@ -295,16 +295,22 @@ uint16_t adcRead(uint8_t channel) {
   return ADC; // результат 0..1023
 }
 
+// Перевіряє, чи значення АЦП знаходиться в робочому діапазоні
+// (поза "мертвими зонами" зупинки мотора знизу і зверху).
+bool isAdcInWorkingRange(uint16_t adcVal) {
+  return adcVal >= ADC_ZERO_THRESHOLD && adcVal < ADC_MAX_THRESHOLD;
+}
+
 // Оновлює швидкість мотора на основі вже зчитаного значення АЦП.
 //
 // motorIndex - індекс двигуна (0..2).
-// adcVal     - значення АЦП (0..1023) відповідного потенціометра.
-//              Якщо adcVal менше ADC_ZERO_THRESHOLD, швидкість
-//              встановлюється в 0 і генерація STEP-імпульсів
-//              припиняється.
+// adcVal     - значення АЦП (0..ADC_ZERO_THRESHOLD) відповідного потенціометра
+//              Якщо adcVal менше ADC_ZERO_THRESHOLD або дорівнює/більше
+//              ADC_MAX_THRESHOLD, швидкість встановлюється в 0 і генерація
+//              STEP-імпульсів припиняється.
 void updateMotorSpeed(uint8_t motorIndex, uint16_t adcVal) {
   uint16_t interval = 0;
-  if (adcVal >= ADC_ZERO_THRESHOLD) {
+  if (isAdcInWorkingRange(adcVal)) {
     uint16_t rpm =
       RPM_MIN +
       ((uint32_t)(adcVal - ADC_ZERO_THRESHOLD) *
