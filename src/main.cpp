@@ -333,6 +333,52 @@ void updateAllMotorSpeeds() {
   for (uint8_t i = 0; i < MOTOR_COUNT; i++) updateMotorSpeed(i, adc[i]);
 }
 
+// Зупиняє генерацію STEP-імпульсів для всіх трьох моторів,
+// встановлюючи їхній інтервал у 0 (ISR ігнорує канал з нульовим
+// stepInterval — див. timer1Init/ISR(TIMER1_COMPA_vect)).
+void stopAllMotors() {
+  noInterrupts();
+  stepInterval[MOTOR_ROLL1] = 0;
+  stepInterval[MOTOR_ROLL2] = 0;
+  stepInterval[MOTOR_TABLE] = 0;
+  interrupts();
+}
+
+// Ручний режим: швидкість кожного мотора задається відповідним
+// потенціометром через АЦП (поточна логіка updateAllMotorSpeeds).
+void runManualMode() {
+  updateAllMotorSpeeds();
+}
+
+// Автоматичний режим: керування швидкістю за власним алгоритмом
+// (без участі потенціометрів). Наповнити логікою окремо.
+void runAutoMode() {
+  // TODO: реалізувати автоматичний алгоритм керування швидкістю
+}
+
+// Визначає активний режим роботи (ручний / автоматичний) за станом
+// вхідних сигналів holdingRegisters[IN_MODE_MANUAL] і [IN_MODE_AUTO],
+// і викликає відповідну функцію керування моторами.
+//
+// Якщо обидва сигнали активні одночасно — трактуємо це як несправність
+// (конфлікт режимів, наприклад через обрив/КЗ проводки перемикача) і
+// безпечно зупиняємо всі мотори, а не намагаємось вгадати пріоритет.
+// Так само зупиняємо мотори, якщо жоден режим не обраний.
+void handleOperatingMode() {
+  bool manualMode = holdingRegisters[IN_MODE_MANUAL];
+  bool autoMode   = holdingRegisters[IN_MODE_AUTO];
+
+  if (manualMode && autoMode) {
+    stopAllMotors(); // конфлікт режимів — трактуємо як помилку
+  } else if (manualMode) {
+    runManualMode();
+  } else if (autoMode) {
+    runAutoMode();
+  } else {
+    stopAllMotors();
+  }
+}
+
 void setup() {
   Serial.begin(9600);
   Wire.begin();
@@ -353,7 +399,7 @@ void setup() {
 
 void loop() {
   readRegisters();
-  printRegisters();
+  // printRegisters();
   writeRegisters();
-  updateAllMotorSpeeds();
+  handleOperatingMode();
 }
