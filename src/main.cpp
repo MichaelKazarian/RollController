@@ -344,10 +344,41 @@ void stopAllMotors() {
   interrupts();
 }
 
-// Ручний режим: швидкість кожного мотора задається відповідним
-// потенціометром через АЦП (поточна логіка updateAllMotorSpeeds).
+// Перевіряє, чи датчик положення столу показує "стіл у вихідній позиції"
+// (сигнал LOW). Використовується і в ручному, і в автоматичному режимі
+// для визначення моменту зупинки обертання столу.
+bool isTableAtPosition() {
+  return holdingRegisters[IN_TABLE_POSITION] == LOW;
+}
+
+// Обертає стіл до спрацювання датчика положення (IN_TABLE_POSITION == LOW).
+// Використовується і в автоматичному режимі, і в ручному режимі
+// (коли IN_TABLE_ROTATE_CMD == HIGH).
+void rotateTableUntilPosition() {
+  if (!isTableAtPosition()) {
+    updateMotorSpeed(MOTOR_TABLE, adcRead(ADC_CH_23));
+  } else {
+    noInterrupts();
+    stepInterval[MOTOR_TABLE] = 0;
+    interrupts();
+  }
+}
+
+// Ручний режим: рулони керуються потенціометрами як завжди.
+// Стіл обертається за одним з двох сценаріїв залежно від IN_TABLE_ROTATE_CMD:
+//   LOW  — стіл обертається постійно, поки утримується сигнал,
+//          незалежно від датчика положення (ручне "прокручування").
+//   HIGH — стіл обертається до першого спрацювання датчика положення
+//          (той самий принцип зупинки, що і в автоматичному режимі).
 void runManualMode() {
-  updateAllMotorSpeeds();
+  updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
+  updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
+
+  if (holdingRegisters[IN_TABLE_ROTATE_CMD] == LOW) {
+    updateMotorSpeed(MOTOR_TABLE, adcRead(ADC_CH_23));
+  } else {
+    rotateTableUntilPosition();
+  }
 }
 
 // Автоматичний режим: керування швидкістю за власним алгоритмом
@@ -355,6 +386,13 @@ void runManualMode() {
 void runAutoMode() {
   // TODO: реалізувати автоматичний алгоритм керування швидкістю
 }
+
+// Перевіряє, чи система зараз перебуває в автоматичному режимі,
+// на основі стану вхідного сигналу holdingRegisters[IN_MODE_AUTO].
+bool isAutoMode() {
+  return holdingRegisters[IN_MODE_AUTO];
+}
+
 
 // Визначає активний режим роботи (ручний / автоматичний) за станом
 // вхідних сигналів holdingRegisters[IN_MODE_MANUAL] і [IN_MODE_AUTO],
@@ -366,7 +404,7 @@ void runAutoMode() {
 // Так само зупиняємо мотори, якщо жоден режим не обраний.
 void handleOperatingMode() {
   bool manualMode = holdingRegisters[IN_MODE_MANUAL];
-  bool autoMode   = holdingRegisters[IN_MODE_AUTO];
+  bool autoMode   = isAutoMode();
 
   if (manualMode && autoMode) {
     stopAllMotors(); // конфлікт режимів — трактуємо як помилку

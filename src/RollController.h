@@ -26,5 +26,7 @@
 #define RPM_MAX 200
 #define F_ISR 50000UL   // частота тіків таймера — впливає на плавність/роздільність
 
-#define IN_MODE_MANUAL  14 // ручний режим керування IN14
-#define IN_MODE_AUTO    16 // автоматичний режим керування IN15
+#define IN_TABLE_POSITION     0  // IN1: датчик вихідного положення столу
+#define IN_MODE_MANUAL       14  // IN14: ручний режим керування 
+#define IN_MODE_AUTO         16  // IN15: автоматичний режим керування
+#define IN_TABLE_ROTATE_CMD  17  // IN16: команда обертання столу в ручному режимі
