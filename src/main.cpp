@@ -339,10 +339,9 @@ void updateAllMotorSpeeds() {
 // встановлюючи їхній інтервал у 0 (ISR ігнорує канал з нульовим
 // stepInterval — див. timer1Init/ISR(TIMER1_COMPA_vect)).
 void stopAllMotors() {
-  noInterrupts();
-  stepInterval[MOTOR_ROLL1] = 0;
-  stepInterval[MOTOR_ROLL2] = 0;
-  stepInterval[MOTOR_TABLE] = 0;
+  updateMotorSpeed(MOTOR_ROLL1, MOTOR_STOP);
+  updateMotorSpeed(MOTOR_ROLL2, MOTOR_STOP);
+  updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
   interrupts();
 }
 
@@ -374,7 +373,7 @@ void rotateTableUntilPosition() {
   if (!isTableAtPosition()) {
     updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED);
   } else {
-    updateMotorSpeed(MOTOR_TABLE, TABLE_STOP);
+    updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
   }
 }
 // Manual Mode
@@ -493,7 +492,7 @@ void runAutoMode() {
 
     case AUTO_ROTATE_TABLE:
       if (!x && isTableAtPosition()) {
-        updateMotorSpeed(MOTOR_TABLE, TABLE_STOP);
+        updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
         lowerCylinders();
         state = AUTO_WAIT_LIMITS;
       } else {

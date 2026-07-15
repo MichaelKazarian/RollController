@@ -53,4 +53,4 @@
 #define OUT9  12
 
 #define TABLE_SPEED 300
-#define TABLE_STOP    0
+#define MOTOR_STOP    0
