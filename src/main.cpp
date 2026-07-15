@@ -344,6 +344,18 @@ void stopAllMotors() {
   interrupts();
 }
 
+// Перевіряє, чи система зараз перебуває в автоматичному режимі,
+// на основі стану вхідного сигналу holdingRegisters[IN_MODE_AUTO].
+bool isAutoMode() {
+  return isInputActive(IN_MODE_AUTO);
+}
+
+// Перевіряє, чи система зараз перебуває в ручному режимі,
+// на основі стану вхідного сигналу holdingRegisters[IN_MODE_MANUAL].
+bool isManualMode() {
+  return isInputActive(IN_MODE_MANUAL);
+}
+
 // Перевіряє, чи датчик положення столу показує "стіл у вихідній позиції"
 // (сигнал LOW). Використовується і в ручному, і в автоматичному режимі
 // для визначення моменту зупинки обертання столу.
@@ -399,18 +411,6 @@ void runManualMode() {
 // (без участі потенціометрів). Наповнити логікою окремо.
 void runAutoMode() {
   // TODO: реалізувати автоматичний алгоритм керування швидкістю
-}
-
-// Перевіряє, чи система зараз перебуває в автоматичному режимі,
-// на основі стану вхідного сигналу holdingRegisters[IN_MODE_AUTO].
-bool isAutoMode() {
-  return isInputActive(IN_MODE_AUTO);
-}
-
-// Перевіряє, чи система зараз перебуває в ручному режимі,
-// на основі стану вхідного сигналу holdingRegisters[IN_MODE_MANUAL].
-bool isManualMode() {
-  return isInputActive(IN_MODE_MANUAL);
 }
 
 // Визначає активний режим роботи (ручний / автоматичний) за станом
