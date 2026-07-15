@@ -344,6 +344,8 @@ void stopAllMotors() {
   interrupts();
 }
 
+// Mode checkers
+
 // Перевіряє, чи система зараз перебуває в автоматичному режимі,
 // на основі стану вхідного сигналу holdingRegisters[IN_MODE_AUTO].
 bool isAutoMode() {
@@ -375,6 +377,7 @@ void rotateTableUntilPosition() {
     interrupts();
   }
 }
+// Manual Mode
 
 // Встановлює пару протилежних виходів на основі одного командного входу.
 // cmdActive == true  -> outOn=HIGH, outOff=LOW
@@ -422,10 +425,97 @@ void runManualMode() {
   handleRollForm2();
 }
 
-// Автоматичний режим: керування швидкістю за власним алгоритмом
-// (без участі потенціометрів). Наповнити логікою окремо.
+// Automatic mode
+
+// Перевіряє, чи всі чотири кінцевики пневмоциліндрів спрацювали (LOW).
+bool allCylinderLimitsReached() {
+  return isInputActive(IN3) && isInputActive(IN5) &&
+         isInputActive(IN7) && isInputActive(IN9);
+}
+
+// Опускає всі чотири пневмоциліндри (затискачі + вальцовки).
+void lowerCylinders() {
+  mcpWriteCached(OUT_CHUCK_CLAMP, HIGH);
+  mcpWriteCached(OUT_CHUCK_RELEASE, LOW);
+  mcpWriteCached(OUT_CLAMP2_ON, HIGH);
+  mcpWriteCached(OUT_CLAMP2_OFF, LOW);
+  mcpWriteCached(OUT_ROLL_FORM1_ON, HIGH);
+  mcpWriteCached(OUT_ROLL_FORM1_OFF, LOW);
+  mcpWriteCached(OUT_ROLL_FORM2_ON, HIGH);
+  mcpWriteCached(OUT_ROLL_FORM2_OFF, LOW);
+}
+
+// Піднімає всі чотири пневмоциліндри (звільняє затискачі + вальцовки).
+void raiseCylinders() {
+  mcpWriteCached(OUT_CHUCK_CLAMP, LOW);
+  mcpWriteCached(OUT_CHUCK_RELEASE, HIGH);
+  mcpWriteCached(OUT_CLAMP2_ON, LOW);
+  mcpWriteCached(OUT_CLAMP2_OFF, HIGH);
+  mcpWriteCached(OUT_ROLL_FORM1_ON, LOW);
+  mcpWriteCached(OUT_ROLL_FORM1_OFF, HIGH);
+  mcpWriteCached(OUT_ROLL_FORM2_ON, LOW);
+  mcpWriteCached(OUT_ROLL_FORM2_OFF, HIGH);
+}
+
+// Стани автоматичного циклу.
+enum AutoCycleState : uint8_t {
+  AUTO_WAIT_START,      // очікуємо натискання IN_CYCLE_START
+  AUTO_ROTATE_TABLE,    // стіл обертається до IN1 == LOW
+  AUTO_WAIT_LIMITS,     // циліндри опущені, чекаємо всі 4 кінцевики
+};
+
+
+// Автоматичний режим: послідовний цикл.
+//   1) Натискання IN_CYCLE_START запускає обертання столу.
+//   2) Коли стіл на позиції (IN1==LOW) — опускаються всі 4 циліндри
+//      і вмикаються двигуни вальцовки (MOTOR_ROLL1, MOTOR_ROLL2).
+//   3) Коли всі кінцевики (IN3,IN5,IN7,IN9) спрацювали — циліндри
+//      підіймаються, двигуни вальцовки зупиняються, і цикл повертається
+//      в очікування нового старту.
 void runAutoMode() {
-  // TODO: реалізувати автоматичний алгоритм керування швидкістю
+  static AutoCycleState state = AUTO_WAIT_START;
+  static bool prevCycleStartPressed = false;
+
+  bool cycleStartPressed = isInputActive(IN_CYCLE_START);
+  bool cycleStartEdge = cycleStartPressed && !prevCycleStartPressed;
+  prevCycleStartPressed = cycleStartPressed;
+
+  switch (state) {
+    case AUTO_WAIT_START:
+      if (cycleStartEdge) {
+        state = AUTO_ROTATE_TABLE;
+      }
+      break;
+
+    case AUTO_ROTATE_TABLE:
+      if (isTableAtPosition()) {
+        noInterrupts();
+        stepInterval[MOTOR_TABLE] = 0;
+        interrupts();
+        lowerCylinders();
+        updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
+        updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
+        state = AUTO_WAIT_LIMITS;
+      } else {
+        updateMotorSpeed(MOTOR_TABLE, adcRead(ADC_CH_23));
+      }
+      break;
+
+    case AUTO_WAIT_LIMITS:
+      if (allCylinderLimitsReached()) {
+        raiseCylinders();
+        noInterrupts();
+        stepInterval[MOTOR_ROLL1] = 0;
+        stepInterval[MOTOR_ROLL2] = 0;
+        interrupts();
+        state = AUTO_WAIT_START;
+      } else {
+        // Підтримуємо швидкість вальцовки, поки чекаємо кінцевики
+        updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
+        updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
+      }
+      break;
+  }
 }
 
 // Визначає активний режим роботи (ручний / автоматичний) за станом
@@ -472,6 +562,6 @@ void setup() {
 void loop() {
   readRegisters();
   // printRegisters();
-  writeRegisters();
+  //writeRegisters();
   handleOperatingMode();
 }
