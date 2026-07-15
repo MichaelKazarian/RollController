@@ -389,6 +389,18 @@ void handleChuckClamp() {
   setComplementaryOutputs(IN_CHUCK_CLAMP_CMD, OUT_CHUCK_CLAMP, OUT_CHUCK_RELEASE);
 }
 
+void handleClamp2() {
+  setComplementaryOutputs(IN_CLAMP2_CMD, OUT_CLAMP2_ON, OUT_CLAMP2_OFF);
+}
+
+void handleRollForm1() {
+  setComplementaryOutputs(IN_ROLL_FORM1_CMD, OUT_ROLL_FORM1_ON, OUT_ROLL_FORM1_OFF);
+}
+
+void handleRollForm2() {
+  setComplementaryOutputs(IN_ROLL_FORM2_CMD, OUT_ROLL_FORM2_ON, OUT_ROLL_FORM2_OFF);
+}
+
 // Ручний режим: рулони керуються потенціометрами як завжди.
 // Стіл обертається за одним з двох сценаріїв залежно від IN_TABLE_ROTATE_CMD:
 //   LOW  — стіл обертається постійно, поки утримується сигнал,
@@ -405,6 +417,9 @@ void runManualMode() {
     rotateTableUntilPosition();
   }
   handleChuckClamp();
+  handleClamp2();
+  handleRollForm1();
+  handleRollForm2();
 }
 
 // Автоматичний режим: керування швидкістю за власним алгоритмом
