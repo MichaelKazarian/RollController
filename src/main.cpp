@@ -50,8 +50,6 @@ uint8_t outCache[16];
 #define REGS_SIZE 32
 uint8_t holdingRegisters[REGS_SIZE] = {};
 
-bool x = false;
-
 void gpioInit() {
   // =========================================================================
   // КОНФІГУРАЦІЯ АДРЕСИ ДЛЯ MCP 1 (Порт B: PB2, PB1, PB0)
@@ -454,7 +452,6 @@ void raiseCylinders() {
   mcpWriteCached(OUT_ROLL_FORM1_OFF, HIGH);
   mcpWriteCached(OUT_ROLL_FORM2_ON, LOW);
   mcpWriteCached(OUT_ROLL_FORM2_OFF, HIGH);
-  x = true;
 }
 
 // Стани автоматичного циклу.
@@ -475,6 +472,7 @@ enum AutoCycleState : uint8_t {
 void runAutoMode() {
   static AutoCycleState state = AUTO_WAIT_START;
   static bool prevCycleStartPressed = false;
+  static bool tableLeftHome = false; // чи стіл вже зійшов з датчика на цьому проході
 
   bool cycleStartPressed = isInputActive(IN_CYCLE_START);
   bool cycleStartEdge = cycleStartPressed && !prevCycleStartPressed;
@@ -483,21 +481,31 @@ void runAutoMode() {
   updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
   updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
 
-  switch (state) {
-    case AUTO_WAIT_START:
-      if (cycleStartEdge) {
-        state = AUTO_ROTATE_TABLE;
-      }
-      break;
+  case AUTO_WAIT_START:
+    if (allCylinderLimitsReached()) {
+      // Циліндри все ще опущені (напр. після скидання живлення
+      // посеред попереднього циклу) — командуємо підйом і чекаємо,
+      // без дозволу на старт нового циклу.
+      raiseCylinders();
+    } else if (cycleStartEdge) {
+      tableLeftHome = false;
+      state = AUTO_ROTATE_TABLE;
+    }
+    break;
 
     case AUTO_ROTATE_TABLE:
-      if (!x && isTableAtPosition()) {
+      updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED);
+
+      if (!tableLeftHome) {
+        // Спочатку чекаємо, поки стіл фізично зійде з датчика
+        if (!isTableAtPosition()) {
+          tableLeftHome = true;
+        }
+      } else if (isTableAtPosition()) {
+        // Датчик спрацював знову після повного оберту — зупиняємось
         updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
         lowerCylinders();
         state = AUTO_WAIT_LIMITS;
-      } else {
-        updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED);
-        x = false;
       }
       break;
 
