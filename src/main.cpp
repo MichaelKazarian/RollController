@@ -553,19 +553,7 @@ void setup() {
   DDRB |= (1 << PB3) | (1 << PB4); // Налаштовуємо PB3 та PB4 як OUTPUT
   DDRC |= (1 << PC2);              // Налаштовуємо PC2 як OUTPUT
 
-  mcpWriteCached(OUT_CLAMP2_ON,  LOW);
-  mcpWriteCached(OUT_CLAMP2_OFF,  HIGH);
-
-  mcpWriteCached(OUT_CHUCK_CLAMP,  LOW);
-  mcpWriteCached(OUT_CHUCK_RELEASE,  HIGH);
-
-   mcpWriteCached(OUT_ROLL_FORM1_ON,  LOW);
-   mcpWriteCached(OUT_ROLL_FORM1_OFF,  HIGH);
-
-   mcpWriteCached(OUT_ROLL_FORM2_ON,  LOW);
-   mcpWriteCached(OUT_ROLL_FORM2_OFF,  HIGH);
-
-   mcpWriteCached(OUT9,  LOW);
+  mcpWriteCached(OUT9,  LOW);
   
   // Запуск таймера крокових двигунів
   noInterrupts();
