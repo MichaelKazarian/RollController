@@ -372,9 +372,9 @@ bool isTableAtPosition() {
 // (коли IN_TABLE_ROTATE_CMD == HIGH).
 void rotateTableUntilPosition() {
   if (!isTableAtPosition()) {
-    updateMotorSpeed(MOTOR_TABLE, 200);
+    updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED);
   } else {
-    updateMotorSpeed(MOTOR_TABLE, 0);
+    updateMotorSpeed(MOTOR_TABLE, TABLE_STOP);
   }
 }
 // Manual Mode
@@ -415,7 +415,7 @@ void runManualMode() {
   updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
 
   if (!isInputActive(IN_TABLE_ROTATE_CMD)) {
-    updateMotorSpeed(MOTOR_TABLE, 200);
+    updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED);
   } else {
     rotateTableUntilPosition();
   }
@@ -493,11 +493,11 @@ void runAutoMode() {
 
     case AUTO_ROTATE_TABLE:
       if (!x && isTableAtPosition()) {
-        updateMotorSpeed(MOTOR_TABLE, 0);
+        updateMotorSpeed(MOTOR_TABLE, TABLE_STOP);
         lowerCylinders();
         state = AUTO_WAIT_LIMITS;
       } else {
-        updateMotorSpeed(MOTOR_TABLE, 200);
+        updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED);
         x = false;
       }
       break;

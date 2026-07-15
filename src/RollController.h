@@ -51,3 +51,6 @@
 #define OUT_ROLL_FORM2_ON     9  // OUT7: вальцовка2 "увімкнути"
 #define OUT_ROLL_FORM2_OFF    8  // OUT8: вальцовка2 "вимкнути"
 #define OUT9  12
+
+#define TABLE_SPEED 300
+#define TABLE_STOP    0
