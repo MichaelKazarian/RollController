@@ -30,3 +30,7 @@
 #define IN_MODE_MANUAL       14  // IN14: ручний режим керування 
 #define IN_MODE_AUTO         16  // IN15: автоматичний режим керування
 #define IN_TABLE_ROTATE_CMD  17  // IN16: команда обертання столу в ручному режимі
+#define IN_CHUCK_CLAMP_CMD   18  // IN17: команда затиснути цангу (1) / розтиснути (0)
+
+#define OUT_CHUCK_CLAMP     13  // OUT3: сигнал "затиснути" (HIGH при затиску)
+#define OUT_CHUCK_RELEASE   12  // OUT4: сигнал "розтиснути" (HIGH при розтиску)

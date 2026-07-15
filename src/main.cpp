@@ -364,6 +364,19 @@ void rotateTableUntilPosition() {
   }
 }
 
+// Встановлює пару протилежних виходів на основі одного командного входу.
+// cmdActive == true  -> outOn=HIGH, outOff=LOW
+// cmdActive == false -> outOn=LOW,  outOff=HIGH
+void setComplementaryOutputs(uint8_t inCmd, uint8_t outOn, uint8_t outOff) {
+  bool cmd = isInputActive(inCmd);
+  mcpWriteCached(outOn, cmd);
+  mcpWriteCached(outOff, !cmd);
+}
+
+void handleChuckClamp() {
+  setComplementaryOutputs(IN_CHUCK_CLAMP_CMD, OUT_CHUCK_CLAMP, OUT_CHUCK_RELEASE);
+}
+
 // Ручний режим: рулони керуються потенціометрами як завжди.
 // Стіл обертається за одним з двох сценаріїв залежно від IN_TABLE_ROTATE_CMD:
 //   LOW  — стіл обертається постійно, поки утримується сигнал,
@@ -374,11 +387,12 @@ void runManualMode() {
   updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
   updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
 
-  if (holdingRegisters[IN_TABLE_ROTATE_CMD] == LOW) {
+  if (isInputActive(IN_TABLE_ROTATE_CMD)) {
     updateMotorSpeed(MOTOR_TABLE, adcRead(ADC_CH_23));
   } else {
     rotateTableUntilPosition();
   }
+  handleChuckClamp();
 }
 
 // Автоматичний режим: керування швидкістю за власним алгоритмом
@@ -390,9 +404,14 @@ void runAutoMode() {
 // Перевіряє, чи система зараз перебуває в автоматичному режимі,
 // на основі стану вхідного сигналу holdingRegisters[IN_MODE_AUTO].
 bool isAutoMode() {
-  return holdingRegisters[IN_MODE_AUTO];
+  return isInputActive(IN_MODE_AUTO);
 }
 
+// Перевіряє, чи система зараз перебуває в ручному режимі,
+// на основі стану вхідного сигналу holdingRegisters[IN_MODE_MANUAL].
+bool isManualMode() {
+  return isInputActive(IN_MODE_MANUAL);
+}
 
 // Визначає активний режим роботи (ручний / автоматичний) за станом
 // вхідних сигналів holdingRegisters[IN_MODE_MANUAL] і [IN_MODE_AUTO],
@@ -403,7 +422,7 @@ bool isAutoMode() {
 // безпечно зупиняємо всі мотори, а не намагаємось вгадати пріоритет.
 // Так само зупиняємо мотори, якщо жоден режим не обраний.
 void handleOperatingMode() {
-  bool manualMode = holdingRegisters[IN_MODE_MANUAL];
+  bool manualMode = isInputActive(IN_MODE_MANUAL) ;
   bool autoMode   = isAutoMode();
 
   if (manualMode && autoMode) {
