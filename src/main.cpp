@@ -302,9 +302,9 @@ void updateMotorSpeed(uint8_t motorIndex, uint16_t adcVal) {
   noInterrupts();
   stepInterval[motorIndex] = interval;
   interrupts();
-  //  Serial.print("Motor "); Serial.print(motorIndex);
-  //  Serial.print("| ADC: "); Serial.print(adcVal);
-  //  Serial.print("| Interval:"); Serial.println(stepInterval[motorIndex]);
+  Serial.print("Motor "); Serial.print(motorIndex);
+  Serial.print("| ADC: "); Serial.print(adcVal);
+  Serial.print("| Interval:"); Serial.println(stepInterval[motorIndex]);
 }
 
 // Перевіряє, чи дозволено роботу двигунів.
@@ -505,8 +505,8 @@ void runAutoMode() {
       if (allCylinderLimitsReached()) {
         raiseCylinders();
         noInterrupts();
-        stepInterval[MOTOR_ROLL1] = 0;
-        stepInterval[MOTOR_ROLL2] = 0;
+        updateMotorSpeed(MOTOR_ROLL1, 0);
+        updateMotorSpeed(MOTOR_ROLL2, 0);
         interrupts();
         state = AUTO_WAIT_START;
       } else {
@@ -553,6 +553,20 @@ void setup() {
   DDRB |= (1 << PB3) | (1 << PB4); // Налаштовуємо PB3 та PB4 як OUTPUT
   DDRC |= (1 << PC2);              // Налаштовуємо PC2 як OUTPUT
 
+  mcpWriteCached(OUT_CLAMP2_ON,  LOW);
+  mcpWriteCached(OUT_CLAMP2_OFF,  HIGH);
+
+  mcpWriteCached(OUT_CHUCK_CLAMP,  LOW);
+  mcpWriteCached(OUT_CHUCK_RELEASE,  HIGH);
+
+   mcpWriteCached(OUT_ROLL_FORM1_ON,  LOW);
+   mcpWriteCached(OUT_ROLL_FORM1_OFF,  HIGH);
+
+   mcpWriteCached(OUT_ROLL_FORM2_ON,  LOW);
+   mcpWriteCached(OUT_ROLL_FORM2_OFF,  HIGH);
+
+   mcpWriteCached(OUT9,  LOW);
+  
   // Запуск таймера крокових двигунів
   noInterrupts();
   timer1Init();

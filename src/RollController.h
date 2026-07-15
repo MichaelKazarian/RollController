@@ -50,3 +50,4 @@
 #define OUT_ROLL_FORM1_OFF   10  // OUT6: вальцовка1 "вимкнути"
 #define OUT_ROLL_FORM2_ON     9  // OUT7: вальцовка2 "увімкнути"
 #define OUT_ROLL_FORM2_OFF    8  // OUT8: вальцовка2 "вимкнути"
+#define OUT9  12
