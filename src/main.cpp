@@ -414,8 +414,8 @@ void runManualMode() {
   updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
   updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
 
-  if (isInputActive(IN_TABLE_ROTATE_CMD)) {
-    updateMotorSpeed(MOTOR_TABLE, adcRead(ADC_CH_23));
+  if (!isInputActive(IN_TABLE_ROTATE_CMD)) {
+    updateMotorSpeed(MOTOR_TABLE, 200);
   } else {
     rotateTableUntilPosition();
   }
@@ -480,6 +480,9 @@ void runAutoMode() {
   bool cycleStartEdge = cycleStartPressed && !prevCycleStartPressed;
   prevCycleStartPressed = cycleStartPressed;
 
+  updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
+  updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
+
   switch (state) {
     case AUTO_WAIT_START:
       if (cycleStartEdge) {
@@ -489,30 +492,18 @@ void runAutoMode() {
 
     case AUTO_ROTATE_TABLE:
       if (isTableAtPosition()) {
-        noInterrupts();
-        stepInterval[MOTOR_TABLE] = 0;
-        interrupts();
+        updateMotorSpeed(MOTOR_TABLE, 0);
         lowerCylinders();
-        updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
-        updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
         state = AUTO_WAIT_LIMITS;
       } else {
-        updateMotorSpeed(MOTOR_TABLE, adcRead(ADC_CH_23));
+        updateMotorSpeed(MOTOR_TABLE, 200);
       }
       break;
 
     case AUTO_WAIT_LIMITS:
       if (allCylinderLimitsReached()) {
         raiseCylinders();
-        noInterrupts();
-        updateMotorSpeed(MOTOR_ROLL1, 0);
-        updateMotorSpeed(MOTOR_ROLL2, 0);
-        interrupts();
         state = AUTO_WAIT_START;
-      } else {
-        // Підтримуємо швидкість вальцовки, поки чекаємо кінцевики
-        updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
-        updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
       }
       break;
   }
