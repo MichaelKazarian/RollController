@@ -50,6 +50,8 @@ uint8_t outCache[16];
 #define REGS_SIZE 32
 uint8_t holdingRegisters[REGS_SIZE] = {};
 
+bool x = false;
+
 void gpioInit() {
   // =========================================================================
   // КОНФІГУРАЦІЯ АДРЕСИ ДЛЯ MCP 1 (Порт B: PB2, PB1, PB0)
@@ -370,11 +372,9 @@ bool isTableAtPosition() {
 // (коли IN_TABLE_ROTATE_CMD == HIGH).
 void rotateTableUntilPosition() {
   if (!isTableAtPosition()) {
-    updateMotorSpeed(MOTOR_TABLE, adcRead(ADC_CH_23));
+    updateMotorSpeed(MOTOR_TABLE, 200);
   } else {
-    noInterrupts();
-    stepInterval[MOTOR_TABLE] = 0;
-    interrupts();
+    updateMotorSpeed(MOTOR_TABLE, 0);
   }
 }
 // Manual Mode
@@ -455,6 +455,7 @@ void raiseCylinders() {
   mcpWriteCached(OUT_ROLL_FORM1_OFF, HIGH);
   mcpWriteCached(OUT_ROLL_FORM2_ON, LOW);
   mcpWriteCached(OUT_ROLL_FORM2_OFF, HIGH);
+  x = true;
 }
 
 // Стани автоматичного циклу.
@@ -491,12 +492,13 @@ void runAutoMode() {
       break;
 
     case AUTO_ROTATE_TABLE:
-      if (isTableAtPosition()) {
+      if (!x && isTableAtPosition()) {
         updateMotorSpeed(MOTOR_TABLE, 0);
         lowerCylinders();
         state = AUTO_WAIT_LIMITS;
       } else {
         updateMotorSpeed(MOTOR_TABLE, 200);
+        x = false;
       }
       break;
 
