@@ -313,6 +313,18 @@ void updateMotorSpeed(uint8_t motorIndex, uint16_t adcVal) {
   // Serial.print("| Interval:"); Serial.println(stepInterval[motorIndex]);
 }
 
+// Встановлює фіксовану швидкість мотора (в об/хв), без участі АЦП.
+// Використовується для моторів, керованих не потенціометром,
+// а константою (наприклад, стіл в автоматичному режимі).
+void setMotorSpeedFixed(uint8_t motorIndex, uint16_t rpm) {
+  uint32_t freq = ((uint32_t)rpm * STEPS_PER_REV[motorIndex]) / 60;
+  uint16_t interval = (F_ISR + freq / 2) / freq;
+
+  noInterrupts();
+  stepInterval[motorIndex] = interval;
+  interrupts();
+}
+
 // Перевіряє, чи дозволено роботу двигунів.
 //
 // Регістр REG_MOTOR_ENABLE використовує активний низький рівень:
@@ -374,7 +386,7 @@ bool isTableAtPosition() {
 // (коли IN_TABLE_ROTATE_CMD == HIGH).
 void rotateTableUntilPosition() {
   if (!isTableAtPosition()) {
-    updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED);
+    updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED_RPM);
   } else {
     updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
   }
@@ -417,7 +429,7 @@ void runManualMode() {
   updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
 
   if (!isInputActive(IN_TABLE_ROTATE_CMD)) {
-    updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED);
+    updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED_RPM);
   } else {
     rotateTableUntilPosition();
   }
@@ -534,7 +546,7 @@ void runAutoMode() {
     }
     break;
   case AUTO_ROTATE_TABLE:
-    updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED);
+    setMotorSpeedFixed(MOTOR_TABLE, TABLE_SPEED_200);
     if (!tableLeftHome) {
       // Спочатку чекаємо, поки стіл фізично зійде з датчика
       if (!isTableAtPosition()) {

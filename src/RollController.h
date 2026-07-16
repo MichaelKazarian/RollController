@@ -52,5 +52,11 @@
 #define OUT_ROLL_FORM2_OFF    8  // OUT8: вальцовка2 "вимкнути"
 #define OUT9  12
 
-#define TABLE_SPEED 200
+#define TABLE_SPEED_RPM 200
 #define MOTOR_STOP    0
+#define TABLE_SPEED_100  63   // rpm, еквівалентний adcVal=100
+#define TABLE_SPEED_200  78   // rpm, еквівалентний adcVal=200
+#define TABLE_SPEED_300  92   // rpm, еквівалентний adcVal=300
+#define TABLE_SPEED_400 107   // rpm, еквівалентний adcVal=400
+#define TABLE_SPEED_500 122   // rpm, еквівалентний adcVal=500
+#define TABLE_SPEED_600 137   // rpm, еквівалентний adcVal=600
