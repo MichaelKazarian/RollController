@@ -385,7 +385,7 @@ void setComplementaryOutputs(uint8_t inCmd, uint8_t outOn, uint8_t outOff) {
 }
 
 void handleCollet() {
-  setComplementaryOutputs(IN_CHUCK_CLAMP_CMD, OUT_CHUCK_CLAMP, OUT_COLLET_OFF);
+  setComplementaryOutputs(IN_CHUCK_CLAMP_CMD, OUT_COLLET_ON, OUT_COLLET_OFF);
 }
 
 void handleClamp2() {
@@ -440,7 +440,7 @@ void lowerCylinders() {
   mcpWriteCached(OUT_ROLL_FORM1_OFF, LOW);
   mcpWriteCached(OUT_ROLL_FORM2_OFF, LOW);
   delay(100);
-  mcpWriteCached(OUT_CHUCK_CLAMP, HIGH);
+  mcpWriteCached(OUT_COLLET_ON, HIGH);
   mcpWriteCached(OUT_CLAMP2_ON, HIGH);
   mcpWriteCached(OUT_ROLL_FORM1_ON, HIGH);
   mcpWriteCached(OUT_ROLL_FORM2_ON, HIGH);
@@ -448,7 +448,7 @@ void lowerCylinders() {
 
 // Піднімає всі чотири пневмоциліндри (звільняє затискачі + вальцовки).
 void raiseCylinders() {
-  mcpWriteCached(OUT_CHUCK_CLAMP, LOW);
+  mcpWriteCached(OUT_COLLET_ON, LOW);
   mcpWriteCached(OUT_CLAMP2_ON, LOW);
   mcpWriteCached(OUT_ROLL_FORM1_ON, LOW);
   mcpWriteCached(OUT_ROLL_FORM2_ON, LOW);
