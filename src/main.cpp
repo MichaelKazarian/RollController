@@ -525,9 +525,6 @@ void runAutoMode() {
   bool cycleStartEdge = cycleStartPressed && !prevCycleStartPressed;
   prevCycleStartPressed = cycleStartPressed;
 
-  updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
-  updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
-
   switch (state) {
   case AUTO_WAIT_START:
     raiseCylinders();
@@ -552,6 +549,8 @@ void runAutoMode() {
     break;
 
   case AUTO_WAIT_LIMITS:
+    updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
+    updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
     if (handleCylinderRetraction()) {
       state = AUTO_WAIT_START;
     }
