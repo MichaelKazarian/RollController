@@ -50,7 +50,7 @@
 #define OUT_ROLL_FORM1_OFF   10  // OUT6: вальцовка1 "вимкнути"
 #define OUT_ROLL_FORM2_ON     9  // OUT7: вальцовка2 "увімкнути"
 #define OUT_ROLL_FORM2_OFF    8  // OUT8: вальцовка2 "вимкнути"
-#define OUT9  12
+#define OUT_BLOW_OFF          1  // OUT9: здув з цанги
 
 #define TABLE_SPEED_RPM 200
 #define MOTOR_STOP    0

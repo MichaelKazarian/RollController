@@ -450,21 +450,38 @@ bool allCylinderLimitsReached() {
          isInputActive(IN_ROLL_FORM2_LIMIT);
 }
 
-// Опускає всі чотири пневмоциліндри (затискачі + вальцовки).
-// Перед подачею сигналу на затиск спочатку стравлюємо повітря
-// (протилежний вихід -> LOW) з невеликою затримкою — це усуває
-// глюки з деякими циліндрами, коли обидва сигнали короткочасно
-// перетинаються.
+// Опускає всі чотири пневмоциліндри послідовно, з паузою на кожному
+// кроці для сповільнення руху (подвійний імпульс ON+OFF -> потім
+// зняття OFF), як у перевіреному робочому зразку. Після опускання —
+// здув деталі з цанги стисненим повітрям протягом 1 секунди.
 void lowerCylinders() {
-  mcpWriteCached(OUT_COLLET_OFF, LOW);
-  mcpWriteCached(OUT_TABLE_FIX_OFF, LOW);
-  mcpWriteCached(OUT_ROLL_FORM1_OFF, LOW);
-  mcpWriteCached(OUT_ROLL_FORM2_OFF, LOW);
+  mcpWriteCached(OUT_TABLE_FIX_ON,  HIGH);
+  mcpWriteCached(OUT_TABLE_FIX_OFF, HIGH);
   delay(100);
-  mcpWriteCached(OUT_COLLET_ON, HIGH);
-  mcpWriteCached(OUT_TABLE_FIX_ON, HIGH);
-  mcpWriteCached(OUT_ROLL_FORM1_ON, HIGH);
-  mcpWriteCached(OUT_ROLL_FORM2_ON, HIGH);
+  mcpWriteCached(OUT_TABLE_FIX_ON,  HIGH);
+  mcpWriteCached(OUT_TABLE_FIX_OFF, LOW);
+
+  mcpWriteCached(OUT_COLLET_ON,  HIGH);
+  mcpWriteCached(OUT_COLLET_OFF, HIGH);
+  delay(100);
+  mcpWriteCached(OUT_COLLET_ON,  HIGH);
+  mcpWriteCached(OUT_COLLET_OFF, LOW);
+
+  mcpWriteCached(OUT_ROLL_FORM1_ON,  HIGH);
+  mcpWriteCached(OUT_ROLL_FORM1_OFF, HIGH);
+  delay(300);
+  mcpWriteCached(OUT_ROLL_FORM1_ON,  HIGH);
+  mcpWriteCached(OUT_ROLL_FORM1_OFF, LOW);
+
+  mcpWriteCached(OUT_ROLL_FORM2_ON,  HIGH);
+  mcpWriteCached(OUT_ROLL_FORM2_OFF, HIGH);
+  delay(300);
+  mcpWriteCached(OUT_ROLL_FORM2_ON,  HIGH);
+  mcpWriteCached(OUT_ROLL_FORM2_OFF, LOW);
+
+  mcpWriteCached(OUT_BLOW_OFF, HIGH); // здув деталі з цанги
+  delay(1000);                       // затримка виконання циклу, час здуву
+  mcpWriteCached(OUT_BLOW_OFF, LOW);
 }
 
 // Піднімає всі чотири пневмоциліндри (звільняє затискачі + вальцовки).
@@ -605,7 +622,7 @@ void setup() {
   DDRB |= (1 << PB3) | (1 << PB4); // Налаштовуємо PB3 та PB4 як OUTPUT
   DDRC |= (1 << PC2);              // Налаштовуємо PC2 як OUTPUT
 
-  mcpWriteCached(OUT9,  LOW);
+  mcpWriteCached(OUT_BLOW_OFF, LOW);
   
   // Запуск таймера крокових двигунів
   noInterrupts();
