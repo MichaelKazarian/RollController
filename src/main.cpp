@@ -431,14 +431,10 @@ bool allCylinderLimitsReached() {
 
 // Опускає всі чотири пневмоциліндри (затискачі + вальцовки).
 void lowerCylinders() {
-  mcpWriteCached(OUT_CHUCK_CLAMP, HIGH);
-  mcpWriteCached(OUT_CHUCK_RELEASE, HIGH);
-  delay(50);
   mcpWriteCached(OUT_CHUCK_RELEASE, LOW);
-
+  delay(100);
+  mcpWriteCached(OUT_CHUCK_CLAMP, HIGH);
   mcpWriteCached(OUT_CLAMP2_ON, HIGH);
-  mcpWriteCached(OUT_CLAMP2_OFF, HIGH);
-  delay(50);
   mcpWriteCached(OUT_CLAMP2_OFF, LOW);
   mcpWriteCached(OUT_ROLL_FORM1_ON, HIGH);
   mcpWriteCached(OUT_ROLL_FORM1_OFF, LOW);
@@ -448,8 +444,9 @@ void lowerCylinders() {
 
 // Піднімає всі чотири пневмоциліндри (звільняє затискачі + вальцовки).
 void raiseCylinders() {
-  mcpWriteCached(OUT_CHUCK_CLAMP, LOW);
   mcpWriteCached(OUT_CHUCK_RELEASE, HIGH);
+  delay(100);
+  mcpWriteCached(OUT_CHUCK_CLAMP, LOW);
   mcpWriteCached(OUT_CLAMP2_ON, LOW);
   mcpWriteCached(OUT_CLAMP2_OFF, HIGH);
   mcpWriteCached(OUT_ROLL_FORM1_ON, LOW);
@@ -485,6 +482,7 @@ void runAutoMode() {
   updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
   updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
 
+  readRegisters();
   switch (state) {   // <-- цього рядка бракувало
     case AUTO_WAIT_START:
       raiseCylinders();

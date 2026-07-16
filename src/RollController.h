@@ -20,7 +20,7 @@
 #define REG_MOTOR_ENABLE 0
 #define ADC_MAX_THRESHOLD 1023
 
-#define ADC_UPDATE_INTERVAL 100 // мс
+#define ADC_UPDATE_INTERVAL 0 // мс
 #define ADC_ZERO_THRESHOLD 10
 #define RPM_MIN 50
 #define RPM_MAX 200
