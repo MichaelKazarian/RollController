@@ -50,6 +50,12 @@ uint8_t outCache[16];
 #define REGS_SIZE 32
 uint8_t holdingRegisters[REGS_SIZE] = {};
 
+// Прапорці "циліндр вже піднятий у поточному циклі" — потрібні,
+// щоб кожен цикл підйому виконувався рівно один раз за прохід циклу.
+bool colletRetracted = false;
+bool rollForm1Retracted = false;
+bool rollForm2Retracted = false;
+
 void gpioInit() {
   // =========================================================================
   // КОНФІГУРАЦІЯ АДРЕСИ ДЛЯ MCP 1 (Порт B: PB2, PB1, PB0)
@@ -423,10 +429,13 @@ void runManualMode() {
 
 // Automatic mode
 
-// Перевіряє, чи всі чотири кінцевики пневмоциліндрів спрацювали (LOW).
+// Перевіряє, чи всі чотири пневмоциліндри (цанга, фіксація столу,
+// вальцовка1, вальцовка2) досягли робочого (опущеного) положення.
 bool allCylinderLimitsReached() {
-  return isInputActive(IN3) && isInputActive(IN5) &&
-         isInputActive(IN7) && isInputActive(IN9);
+  return isInputActive(IN_COLLET_LIMIT) &&
+         isInputActive(IN_TABLE_FIX_LIMIT) &&
+         isInputActive(IN_ROLL_FORM1_LIMIT) &&
+         isInputActive(IN_ROLL_FORM2_LIMIT);
 }
 
 // Опускає всі чотири пневмоциліндри (затискачі + вальцовки).
@@ -459,13 +468,46 @@ void raiseCylinders() {
   mcpWriteCached(OUT_ROLL_FORM2_OFF, HIGH);
 }
 
+// Обробляє фазу очікування кінцевиків: піднімає цангу, вальцовку1
+// і вальцовку2 одразу, щойно спрацював їхній власний кінцевик,
+// незалежно одна від одної. Фіксацію столу підіймає лише після
+// того, як усі три вже підняті — стіл має лишатись нерухомим,
+// поки триває обробка деталі.
+// Повертає true, якщо цикл підйому повністю завершено (можна
+// переходити в AUTO_WAIT_START).
+bool handleCylinderRetraction() {
+  if (!colletRetracted && isInputActive(IN_COLLET_LIMIT)) {
+    mcpWriteCached(OUT_COLLET_ON, LOW);
+    mcpWriteCached(OUT_COLLET_OFF, HIGH);
+    colletRetracted = true;
+  }
+  if (!rollForm1Retracted && isInputActive(IN_ROLL_FORM1_LIMIT)) {
+    mcpWriteCached(OUT_ROLL_FORM1_ON, LOW);
+    mcpWriteCached(OUT_ROLL_FORM1_OFF, HIGH);
+    rollForm1Retracted = true;
+  }
+  if (!rollForm2Retracted && isInputActive(IN_ROLL_FORM2_LIMIT)) {
+    mcpWriteCached(OUT_ROLL_FORM2_ON, LOW);
+    mcpWriteCached(OUT_ROLL_FORM2_OFF, HIGH);
+    rollForm2Retracted = true;
+  }
+
+  if (colletRetracted && rollForm1Retracted && rollForm2Retracted &&
+      isInputActive(IN_TABLE_FIX_LIMIT)) {
+    mcpWriteCached(OUT_TABLE_FIX_ON, LOW);
+    mcpWriteCached(OUT_TABLE_FIX_OFF, HIGH);
+    colletRetracted = rollForm1Retracted = rollForm2Retracted = false;
+    return true;
+  }
+  return false;
+}
+
 // Стани автоматичного циклу.
 enum AutoCycleState : uint8_t {
   AUTO_WAIT_START,      // очікуємо натискання IN_CYCLE_START
   AUTO_ROTATE_TABLE,    // стіл обертається до IN1 == LOW
   AUTO_WAIT_LIMITS,     // циліндри опущені, чекаємо всі 4 кінцевики
 };
-
 
 // Автоматичний режим: послідовний цикл.
 //   1) Натискання IN_CYCLE_START запускає обертання столу.
@@ -510,8 +552,7 @@ void runAutoMode() {
     break;
 
   case AUTO_WAIT_LIMITS:
-    if (allCylinderLimitsReached()) {
-      raiseCylinders();
+    if (handleCylinderRetraction()) {
       state = AUTO_WAIT_START;
     }
     break;
