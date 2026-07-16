@@ -37,15 +37,15 @@
 #define IN_MODE_MANUAL       14  // IN14: ручний режим керування 
 #define IN_MODE_AUTO         16  // IN15: автоматичний режим керування
 #define IN_TABLE_ROTATE_CMD  17  // IN16: команда обертання столу в ручному режимі
-#define IN_CHUCK_CLAMP_CMD   18  // IN17: команда затиснути цангу (1) / розтиснути (0)
-#define IN_CLAMP2_CMD   19  // IN18: команда затиснути (другий затискач)
+#define IN_COLLET_CMD        18  // IN17: команда затиснути цангу (1) / розтиснути (0)
+#define IN_TABLE_FIX_CMD     19   // IN18: команда затиснути (другий затискач)
 #define IN_ROLL_FORM1_CMD    20  // IN19: команда вальцовка1
 #define IN_ROLL_FORM2_CMD    21  // IN20: команда вальцовка2
                                  // ЦАНГА 12, 13
-#define OUT_COLLET_ON      13  // OUT3: сигнал "затиснути" (HIGH при затиску)
+#define OUT_COLLET_ON        13  // OUT3: сигнал "затиснути" (HIGH при затиску)
 #define OUT_COLLET_OFF       12  // OUT4: "розтиснути" цангу (HIGH при розтиску)
-#define OUT_CLAMP2_ON         0  // OUT1: сигнал "затиснути"
-#define OUT_CLAMP2_OFF       14  // OUT2: сигнал "розтиснути"
+#define OUT_TABLE_FIX_ON      0  // OUT1: сигнал "затиснути"
+#define OUT_TABLE_FIX_OFF    14  // OUT2: сигнал "розтиснути"
 #define OUT_ROLL_FORM1_ON    11  // OUT5: вальцовка1 "увімкнути"
 #define OUT_ROLL_FORM1_OFF   10  // OUT6: вальцовка1 "вимкнути"
 #define OUT_ROLL_FORM2_ON     9  // OUT7: вальцовка2 "увімкнути"
