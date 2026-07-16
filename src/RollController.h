@@ -60,3 +60,4 @@
 #define TABLE_SPEED_400 107   // rpm, еквівалентний adcVal=400
 #define TABLE_SPEED_500 122   // rpm, еквівалентний adcVal=500
 #define TABLE_SPEED_600 137   // rpm, еквівалентний adcVal=600
+#define TABLE_SPEED_800 180

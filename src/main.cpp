@@ -539,7 +539,7 @@ bool handleCylinderRetraction() {
 // потрібний вхід MCP23017, що забезпечує мінімальну затримку
 // зупинки столу.
 void rotateTableUntilPositionFast() {
-  setMotorSpeedFixed(MOTOR_TABLE, TABLE_SPEED_200);
+  setMotorSpeedFixed(MOTOR_TABLE, TABLE_SPEED_800);
   bool leftHome = false;
   while (true) {
     holdingRegisters[IN_TABLE_POSITION] =
