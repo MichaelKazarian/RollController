@@ -481,21 +481,21 @@ void runAutoMode() {
   updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
   updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
 
-  case AUTO_WAIT_START:
-    if (allCylinderLimitsReached()) {
-      // Циліндри все ще опущені (напр. після скидання живлення
-      // посеред попереднього циклу) — командуємо підйом і чекаємо,
-      // без дозволу на старт нового циклу.
-      raiseCylinders();
-    } else if (cycleStartEdge) {
-      tableLeftHome = false;
-      state = AUTO_ROTATE_TABLE;
-    }
-    break;
+  switch (state) {   // <-- цього рядка бракувало
+    case AUTO_WAIT_START:
+      if (allCylinderLimitsReached()) {
+        // Циліндри все ще опущені (напр. після скидання живлення
+        // посеред попереднього циклу) — командуємо підйом і чекаємо,
+        // без дозволу на старт нового циклу.
+        raiseCylinders();
+      } else if (cycleStartEdge) {
+        tableLeftHome = false;
+        state = AUTO_ROTATE_TABLE;
+      }
+      break;
 
     case AUTO_ROTATE_TABLE:
       updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED);
-
       if (!tableLeftHome) {
         // Спочатку чекаємо, поки стіл фізично зійде з датчика
         if (!isTableAtPosition()) {
