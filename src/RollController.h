@@ -42,10 +42,10 @@
 #define IN_ROLL_FORM1_CMD    20  // IN19: команда вальцовка1
 #define IN_ROLL_FORM2_CMD    21  // IN20: команда вальцовка2
                                  // ЦАНГА 12, 13
-#define OUT_COLLET_ON        13  // OUT3: сигнал "затиснути" (HIGH при затиску)
-#define OUT_COLLET_OFF       12  // OUT4: "розтиснути" цангу (HIGH при розтиску)
-#define OUT_TABLE_FIX_ON      0  // OUT1: сигнал "затиснути"
-#define OUT_TABLE_FIX_OFF    14  // OUT2: сигнал "розтиснути"
+#define OUT_COLLET_ON        13  // OUT3: цанга — "затиснути" (HIGH при затиску)
+#define OUT_COLLET_OFF       12  // OUT4: цанга — "розтиснути" (HIGH при розтиску)
+#define OUT_TABLE_FIX_ON      0  // OUT1: фіксація столу — "зафіксувати"
+#define OUT_TABLE_FIX_OFF    14  // OUT2: фіксація столу — "розфіксувати"
 #define OUT_ROLL_FORM1_ON    11  // OUT5: вальцовка1 "увімкнути"
 #define OUT_ROLL_FORM1_OFF   10  // OUT6: вальцовка1 "вимкнути"
 #define OUT_ROLL_FORM2_ON     9  // OUT7: вальцовка2 "увімкнути"
