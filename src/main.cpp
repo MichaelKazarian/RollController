@@ -531,12 +531,41 @@ bool handleCylinderRetraction() {
   return false;
 }
 
+// Обертає стіл до наступного спрацювання датчика положення.
+// Спочатку обов'язково чекає, поки стіл зійде з датчика,
+// після чого шукає його повторне спрацювання.
+//
+// Під час обертання максимально часто опитується лише один
+// потрібний вхід MCP23017, що забезпечує мінімальну затримку
+// зупинки столу.
+void rotateTableUntilPositionFast() {
+  setMotorSpeedFixed(MOTOR_TABLE, TABLE_SPEED_200);
+  bool leftHome = false;
+  while (true) {
+    holdingRegisters[IN_TABLE_POSITION] =
+      mcp_in1.digitalRead(IN_TABLE_POSITION);
+
+    if (!leftHome) {
+      if (!isTableAtPosition()) {
+        leftHome = true;
+      }
+    } else {
+      if (isTableAtPosition()) {
+        break;
+      }
+    }
+  }
+
+  updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
+}
+
 // Стани автоматичного циклу.
 enum AutoCycleState : uint8_t {
   AUTO_WAIT_START,      // очікуємо натискання IN_CYCLE_START
-  AUTO_ROTATE_TABLE,    // стіл обертається до IN1 == LOW
   AUTO_WAIT_LIMITS,     // циліндри опущені, чекаємо всі 4 кінцевики
 };
+
+bool autoInitialized = false;
 
 // Автоматичний режим: послідовний цикл.
 //   1) Натискання IN_CYCLE_START запускає обертання столу.
@@ -548,7 +577,11 @@ enum AutoCycleState : uint8_t {
 void runAutoMode() {
   static AutoCycleState state = AUTO_WAIT_START;
   static bool prevCycleStartPressed = false;
-  static bool tableLeftHome = false; // чи стіл вже зійшов з датчика на цьому проході
+
+  if (!autoInitialized) {
+    raiseCylinders();
+    autoInitialized = true;
+  }
 
   bool cycleStartPressed = isInputActive(IN_CYCLE_START);
   bool cycleStartEdge = cycleStartPressed && !prevCycleStartPressed;
@@ -556,22 +589,8 @@ void runAutoMode() {
 
   switch (state) {
   case AUTO_WAIT_START:
-    raiseCylinders();
     if (!allCylinderLimitsReached() && cycleStartEdge) {
-      tableLeftHome = false;
-      state = AUTO_ROTATE_TABLE;
-    }
-    break;
-  case AUTO_ROTATE_TABLE:
-    setMotorSpeedFixed(MOTOR_TABLE, TABLE_SPEED_200);
-    if (!tableLeftHome) {
-      // Спочатку чекаємо, поки стіл фізично зійде з датчика
-      if (!isTableAtPosition()) {
-        tableLeftHome = true;
-      }
-    } else if (isTableAtPosition()) {
-      // Датчик спрацював знову після повного оберту — зупиняємось
-      updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
+      rotateTableUntilPositionFast();
       lowerCylinders();
       state = AUTO_WAIT_LIMITS;
     }
@@ -596,16 +615,19 @@ void runAutoMode() {
 // безпечно зупиняємо всі мотори, а не намагаємось вгадати пріоритет.
 // Так само зупиняємо мотори, якщо жоден режим не обраний.
 void handleOperatingMode() {
-  bool manualMode = isInputActive(IN_MODE_MANUAL) ;
+  bool manualMode = isInputActive(IN_MODE_MANUAL);
   bool autoMode   = isAutoMode();
 
   if (manualMode && autoMode) {
-    stopAllMotors(); // конфлікт режимів — трактуємо як помилку
+    autoInitialized = false;
+    stopAllMotors();
   } else if (manualMode) {
+    autoInitialized = false;
     runManualMode();
   } else if (autoMode) {
     runAutoMode();
   } else {
+    autoInitialized = false;
     stopAllMotors();
   }
 }
