@@ -486,42 +486,35 @@ void runAutoMode() {
   updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
   updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
 
-  readRegisters();
-  switch (state) {   // <-- цього рядка бракувало
-    case AUTO_WAIT_START:
+  switch (state) {
+  case AUTO_WAIT_START:
+    raiseCylinders();
+    if (!allCylinderLimitsReached() && cycleStartEdge) {
+      tableLeftHome = false;
+      state = AUTO_ROTATE_TABLE;
+    }
+    break;
+  case AUTO_ROTATE_TABLE:
+    updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED);
+    if (!tableLeftHome) {
+      // Спочатку чекаємо, поки стіл фізично зійде з датчика
+      if (!isTableAtPosition()) {
+        tableLeftHome = true;
+      }
+    } else if (isTableAtPosition()) {
+      // Датчик спрацював знову після повного оберту — зупиняємось
+      updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
+      lowerCylinders();
+      state = AUTO_WAIT_LIMITS;
+    }
+    break;
+
+  case AUTO_WAIT_LIMITS:
+    if (allCylinderLimitsReached()) {
       raiseCylinders();
-      if (allCylinderLimitsReached()) {
-        // Циліндри все ще опущені (напр. після скидання живлення
-        // посеред попереднього циклу) — командуємо підйом і чекаємо,
-        // без дозволу на старт нового циклу.
-        raiseCylinders();
-      } else if (cycleStartEdge) {
-        tableLeftHome = false;
-        state = AUTO_ROTATE_TABLE;
-      }
-      break;
-
-    case AUTO_ROTATE_TABLE:
-      updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED);
-      if (!tableLeftHome) {
-        // Спочатку чекаємо, поки стіл фізично зійде з датчика
-        if (!isTableAtPosition()) {
-          tableLeftHome = true;
-        }
-      } else if (isTableAtPosition()) {
-        // Датчик спрацював знову після повного оберту — зупиняємось
-        updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
-        lowerCylinders();
-        state = AUTO_WAIT_LIMITS;
-      }
-      break;
-
-    case AUTO_WAIT_LIMITS:
-      if (allCylinderLimitsReached()) {
-        raiseCylinders();
-        state = AUTO_WAIT_START;
-      }
-      break;
+      state = AUTO_WAIT_START;
+    }
+    break;
   }
 }
 
