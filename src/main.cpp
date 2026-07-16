@@ -302,9 +302,9 @@ void updateMotorSpeed(uint8_t motorIndex, uint16_t adcVal) {
   noInterrupts();
   stepInterval[motorIndex] = interval;
   interrupts();
-  Serial.print("Motor "); Serial.print(motorIndex);
-  Serial.print("| ADC: "); Serial.print(adcVal);
-  Serial.print("| Interval:"); Serial.println(stepInterval[motorIndex]);
+  // Serial.print("Motor "); Serial.print(motorIndex);
+  // Serial.print("| ADC: "); Serial.print(adcVal);
+  // Serial.print("| Interval:"); Serial.println(stepInterval[motorIndex]);
 }
 
 // Перевіряє, чи дозволено роботу двигунів.
@@ -340,7 +340,6 @@ void stopAllMotors() {
   updateMotorSpeed(MOTOR_ROLL1, MOTOR_STOP);
   updateMotorSpeed(MOTOR_ROLL2, MOTOR_STOP);
   updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
-  interrupts();
 }
 
 // Mode checkers
@@ -433,8 +432,13 @@ bool allCylinderLimitsReached() {
 // Опускає всі чотири пневмоциліндри (затискачі + вальцовки).
 void lowerCylinders() {
   mcpWriteCached(OUT_CHUCK_CLAMP, HIGH);
+  mcpWriteCached(OUT_CHUCK_RELEASE, HIGH);
+  delay(50);
   mcpWriteCached(OUT_CHUCK_RELEASE, LOW);
+
   mcpWriteCached(OUT_CLAMP2_ON, HIGH);
+  mcpWriteCached(OUT_CLAMP2_OFF, HIGH);
+  delay(50);
   mcpWriteCached(OUT_CLAMP2_OFF, LOW);
   mcpWriteCached(OUT_ROLL_FORM1_ON, HIGH);
   mcpWriteCached(OUT_ROLL_FORM1_OFF, LOW);
@@ -483,6 +487,7 @@ void runAutoMode() {
 
   switch (state) {   // <-- цього рядка бракувало
     case AUTO_WAIT_START:
+      raiseCylinders();
       if (allCylinderLimitsReached()) {
         // Циліндри все ще опущені (напр. після скидання живлення
         // посеред попереднього циклу) — командуємо підйом і чекаємо,
