@@ -384,8 +384,8 @@ void setComplementaryOutputs(uint8_t inCmd, uint8_t outOn, uint8_t outOff) {
   mcpWriteCached(outOff, !cmd);
 }
 
-void handleChuckClamp() {
-  setComplementaryOutputs(IN_CHUCK_CLAMP_CMD, OUT_CHUCK_CLAMP, OUT_CHUCK_RELEASE);
+void handleCollet() {
+  setComplementaryOutputs(IN_CHUCK_CLAMP_CMD, OUT_CHUCK_CLAMP, OUT_COLLET_OFF);
 }
 
 void handleClamp2() {
@@ -415,7 +415,7 @@ void runManualMode() {
   } else {
     rotateTableUntilPosition();
   }
-  handleChuckClamp();
+  handleCollet();
   handleClamp2();
   handleRollForm1();
   handleRollForm2();
@@ -430,28 +430,32 @@ bool allCylinderLimitsReached() {
 }
 
 // Опускає всі чотири пневмоциліндри (затискачі + вальцовки).
+// Перед подачею сигналу на затиск спочатку стравлюємо повітря
+// (протилежний вихід -> LOW) з невеликою затримкою — це усуває
+// глюки з деякими циліндрами, коли обидва сигнали короткочасно
+// перетинаються.
 void lowerCylinders() {
-  mcpWriteCached(OUT_CHUCK_RELEASE, LOW);
+  mcpWriteCached(OUT_COLLET_OFF, LOW);
+  mcpWriteCached(OUT_CLAMP2_OFF, LOW);
+  mcpWriteCached(OUT_ROLL_FORM1_OFF, LOW);
+  mcpWriteCached(OUT_ROLL_FORM2_OFF, LOW);
   delay(100);
   mcpWriteCached(OUT_CHUCK_CLAMP, HIGH);
   mcpWriteCached(OUT_CLAMP2_ON, HIGH);
-  mcpWriteCached(OUT_CLAMP2_OFF, LOW);
   mcpWriteCached(OUT_ROLL_FORM1_ON, HIGH);
-  mcpWriteCached(OUT_ROLL_FORM1_OFF, LOW);
   mcpWriteCached(OUT_ROLL_FORM2_ON, HIGH);
-  mcpWriteCached(OUT_ROLL_FORM2_OFF, LOW);
 }
 
 // Піднімає всі чотири пневмоциліндри (звільняє затискачі + вальцовки).
 void raiseCylinders() {
-  mcpWriteCached(OUT_CHUCK_RELEASE, HIGH);
-  delay(100);
   mcpWriteCached(OUT_CHUCK_CLAMP, LOW);
   mcpWriteCached(OUT_CLAMP2_ON, LOW);
-  mcpWriteCached(OUT_CLAMP2_OFF, HIGH);
   mcpWriteCached(OUT_ROLL_FORM1_ON, LOW);
-  mcpWriteCached(OUT_ROLL_FORM1_OFF, HIGH);
   mcpWriteCached(OUT_ROLL_FORM2_ON, LOW);
+  delay(100);
+  mcpWriteCached(OUT_COLLET_OFF, HIGH);
+  mcpWriteCached(OUT_CLAMP2_OFF, HIGH);
+  mcpWriteCached(OUT_ROLL_FORM1_OFF, HIGH);
   mcpWriteCached(OUT_ROLL_FORM2_OFF, HIGH);
 }
 

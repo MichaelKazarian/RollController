@@ -41,9 +41,9 @@
 #define IN_CLAMP2_CMD   19  // IN18: команда затиснути (другий затискач)
 #define IN_ROLL_FORM1_CMD    20  // IN19: команда вальцовка1
 #define IN_ROLL_FORM2_CMD    21  // IN20: команда вальцовка2
-                                 // ЦАНГА 12, 13  
+                                 // ЦАНГА 12, 13
 #define OUT_CHUCK_CLAMP      13  // OUT3: сигнал "затиснути" (HIGH при затиску)
-#define OUT_CHUCK_RELEASE    12  // OUT4: сигнал "розтиснути" (HIGH при розтиску)
+#define OUT_COLLET_OFF       12  // OUT4: "розтиснути" цангу (HIGH при розтиску)
 #define OUT_CLAMP2_ON         0  // OUT1: сигнал "затиснути"
 #define OUT_CLAMP2_OFF       14  // OUT2: сигнал "розтиснути"
 #define OUT_ROLL_FORM1_ON    11  // OUT5: вальцовка1 "увімкнути"
