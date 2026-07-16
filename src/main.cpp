@@ -360,6 +360,44 @@ void stopAllMotors() {
   updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
 }
 
+inline void readTablePosition() {
+    holdingRegisters[IN_TABLE_POSITION] =
+        mcp_in1.digitalRead(IN_TABLE_POSITION);
+}
+
+// Перевіряє, чи датчик положення столу показує "стіл у вихідній позиції"
+// (сигнал LOW). Використовується і в ручному, і в автоматичному режимі
+// для визначення моменту зупинки обертання столу.
+bool isTableAtPosition() {
+  return holdingRegisters[IN_TABLE_POSITION] == LOW;
+}
+
+// Обертає стіл до наступного спрацювання датчика положення.
+// Спочатку обов'язково чекає, поки стіл зійде з датчика,
+// після чого шукає його повторне спрацювання.
+//
+// Під час обертання максимально часто опитується лише один
+// потрібний вхід MCP23017, що забезпечує мінімальну затримку
+// зупинки столу.
+void rotateTableToHomePosition() {
+  setMotorSpeedFixed(MOTOR_TABLE, TABLE_SPEED_800);
+  bool leftHome = false;
+  while (true) {
+    readTablePosition();
+    if (!leftHome) {
+      if (!isTableAtPosition()) {
+        leftHome = true;
+      }
+    } else {
+      if (isTableAtPosition()) {
+        break;
+      }
+    }
+  }
+
+  updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
+}
+
 // Mode checkers
 
 // Перевіряє, чи система зараз перебуває в автоматичному режимі,
@@ -374,23 +412,6 @@ bool isManualMode() {
   return isInputActive(IN_MODE_MANUAL);
 }
 
-// Перевіряє, чи датчик положення столу показує "стіл у вихідній позиції"
-// (сигнал LOW). Використовується і в ручному, і в автоматичному режимі
-// для визначення моменту зупинки обертання столу.
-bool isTableAtPosition() {
-  return holdingRegisters[IN_TABLE_POSITION] == LOW;
-}
-
-// Обертає стіл до спрацювання датчика положення (IN_TABLE_POSITION == LOW).
-// Використовується і в автоматичному режимі, і в ручному режимі
-// (коли IN_TABLE_ROTATE_CMD == HIGH).
-void rotateTableUntilPosition() {
-  if (!isTableAtPosition()) {
-    updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED_RPM);
-  } else {
-    updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
-  }
-}
 // Manual Mode
 
 // Встановлює пару протилежних виходів на основі одного командного входу.
@@ -431,7 +452,7 @@ void runManualMode() {
   if (!isInputActive(IN_TABLE_ROTATE_CMD)) {
     updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED_RPM);
   } else {
-    rotateTableUntilPosition();
+    rotateTableToHomePosition();
   }
   handleCollet();
   handleTableFix();
@@ -531,34 +552,6 @@ bool handleCylinderRetraction() {
   return false;
 }
 
-// Обертає стіл до наступного спрацювання датчика положення.
-// Спочатку обов'язково чекає, поки стіл зійде з датчика,
-// після чого шукає його повторне спрацювання.
-//
-// Під час обертання максимально часто опитується лише один
-// потрібний вхід MCP23017, що забезпечує мінімальну затримку
-// зупинки столу.
-void rotateTableUntilPositionFast() {
-  setMotorSpeedFixed(MOTOR_TABLE, TABLE_SPEED_800);
-  bool leftHome = false;
-  while (true) {
-    holdingRegisters[IN_TABLE_POSITION] =
-      mcp_in1.digitalRead(IN_TABLE_POSITION);
-
-    if (!leftHome) {
-      if (!isTableAtPosition()) {
-        leftHome = true;
-      }
-    } else {
-      if (isTableAtPosition()) {
-        break;
-      }
-    }
-  }
-
-  updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
-}
-
 // Стани автоматичного циклу.
 enum AutoCycleState : uint8_t {
   AUTO_WAIT_START,      // очікуємо натискання IN_CYCLE_START
@@ -593,7 +586,7 @@ void runAutoMode() {
   switch (state) {
   case AUTO_WAIT_START:
     if (!allCylinderLimitsReached() && cycleStartEdge) {
-      rotateTableUntilPositionFast();
+      rotateTableToHomePosition();
       lowerCylinders();
       state = AUTO_WAIT_LIMITS;
     }
