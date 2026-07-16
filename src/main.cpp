@@ -449,8 +449,8 @@ void runManualMode() {
   updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
   updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
 
-  if (!isInputActive(IN_TABLE_ROTATE_CMD)) {
-    updateMotorSpeed(MOTOR_TABLE, TABLE_SPEED_RPM);
+  if (isInputActive(IN_TABLE_ROTATE_CMD)) {
+    updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
   } else {
     rotateTableToHomePosition();
   }
