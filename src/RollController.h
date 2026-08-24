@@ -18,7 +18,7 @@
 #define ADC_CH_23 0  // фізичний пін 23 -> ADC0 / PC0 (Arduino A0)
 
 #define REG_MOTOR_ENABLE 0
-#define ADC_MAX_THRESHOLD 1023
+#define ADC_MAX_THRESHOLD 1022
 
 #define ADC_UPDATE_INTERVAL 0 // мс
 #define ADC_ZERO_THRESHOLD 10
