@@ -490,7 +490,7 @@ void lowerCylinders() {
 
   mcpWriteCached(OUT_ROLL_FORM1_ON,  HIGH);
   mcpWriteCached(OUT_ROLL_FORM1_OFF, HIGH);
-  delay(300);
+  delay(450);
   mcpWriteCached(OUT_ROLL_FORM1_ON,  HIGH);
   mcpWriteCached(OUT_ROLL_FORM1_OFF, LOW);
 
