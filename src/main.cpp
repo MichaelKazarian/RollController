@@ -478,13 +478,13 @@ bool allCylinderLimitsReached() {
 void lowerCylinders() {
   mcpWriteCached(OUT_TABLE_FIX_ON,  HIGH);
   mcpWriteCached(OUT_TABLE_FIX_OFF, HIGH);
-  delay(100);
+  delay(80);
   mcpWriteCached(OUT_TABLE_FIX_ON,  HIGH);
   mcpWriteCached(OUT_TABLE_FIX_OFF, LOW);
 
   mcpWriteCached(OUT_COLLET_ON,  HIGH);
   mcpWriteCached(OUT_COLLET_OFF, HIGH);
-  delay(100);
+  delay(80);
   mcpWriteCached(OUT_COLLET_ON,  HIGH);
   mcpWriteCached(OUT_COLLET_OFF, LOW);
 
