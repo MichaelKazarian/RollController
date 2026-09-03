@@ -9,16 +9,16 @@
 
 // Двигуни
 #define MOTOR_COUNT 3
-#define MOTOR_ROLL1 0   // мотор рулону 1
-#define MOTOR_ROLL2 1   // мотор рулону 2
+#define MOTOR_ROLL1 0   // мотор вальцовки 1
+#define MOTOR_ROLL2 1   // мотор вальцовки 2
 #define MOTOR_TABLE 2   // мотор столу
 
-#define ADC_CH_19 6  // фізичний пін 19 -> ADC6 (лише аналоговий, немає цифрового аналога)
-#define ADC_CH_22 7  // фізичний пін 22 -> ADC7 (лише аналоговий, немає цифрового аналога)
-#define ADC_CH_23 0  // фізичний пін 23 -> ADC0 / PC0 (Arduino A0)
+#define ADC_CH_19 6  // пін 19 -> ADC6 (аналоговий)
+#define ADC_CH_22 7  // пін 22 -> ADC7 (аналоговий)
+#define ADC_CH_23 0  // пін 23 -> ADC0 / PC0 (Arduino A0)
 
 #define REG_MOTOR_ENABLE 0
-#define ADC_MAX_THRESHOLD 1022
+#define ADC_MAX_THRESHOLD 900
 
 #define ADC_UPDATE_INTERVAL 0 // мс
 #define ADC_ZERO_THRESHOLD 10
@@ -30,15 +30,15 @@
 // Кінцевики нижнього (робочого) положення пневмоциліндрів.
 #define IN_COLLET_LIMIT       2  // IN3: цанга досягла робочого положення
 #define IN_TABLE_FIX_LIMIT    4  // IN5: фіксація столу спрацювала
-#define IN_ROLL_FORM1_LIMIT   5  // IN7: вальцовка1 досягла робочого положення
-#define IN_ROLL_FORM2_LIMIT   9  // IN9: вальцовка2 досягла робочого положення
+#define IN_ROLL_FORM1_LIMIT   5  // IN7: вальцовка1 в робочому положенні
+#define IN_ROLL_FORM2_LIMIT   9  // IN9: вальцовка2 в робочому положенні
 
 #define IN_TABLE_POSITION     0  // IN1: датчик вихідного положення столу
 #define IN_MODE_MANUAL       14  // IN14: ручний режим керування 
 #define IN_MODE_AUTO         16  // IN15: автоматичний режим керування
 #define IN_TABLE_ROTATE_CMD  17  // IN16: команда обертання столу в ручному режимі
 #define IN_COLLET_CMD        18  // IN17: команда затиснути цангу (1) / розтиснути (0)
-#define IN_TABLE_FIX_CMD     19   // IN18: команда затиснути (другий затискач)
+#define IN_TABLE_FIX_CMD     19  // IN18: команда затиснути (другий затискач)
 #define IN_ROLL_FORM1_CMD    20  // IN19: команда вальцовка1
 #define IN_ROLL_FORM2_CMD    21  // IN20: команда вальцовка2
                                  // ЦАНГА 12, 13
