@@ -22,8 +22,6 @@
                                (etags-tag-create (find-dirs-str))))
                    ))
          (eval . (git-gutter-mode))
-         (eval . (yas-minor-mode-on))
-         (eval . (message ".dir-locals.el was loaded"))
          )))
 
 ;;; .dir-locals.el ends here
