@@ -334,13 +334,18 @@ inline bool isMotorsEnabled() {
   return holdingRegisters[REG_MOTOR_ENABLE] == LOW;
 }
 
-// Плавне наближення поточного значень АЦП до цільового (Soft Start) з кроком у 2 мс
+// Плавне наближення поточного значень АЦП до цільового (Soft Start) для перших двох моторів
 uint16_t getSoftStartAdc(uint8_t motorIndex, uint16_t targetAdc) {
-  const uint32_t RAMP_STEP_INTERVAL = 2; // Інтервал кроку (мс)
-  static uint32_t lastRampUpdate[MOTOR_COUNT-1] = {0, 0};
-  static uint16_t currentAdc[MOTOR_COUNT-1] = {0, 0};
+  // Якщо це мотор столу (індекс 2) — плавний старт не потрібен, повертаємо як є
+  if (motorIndex >= 2) {
+    return targetAdc;
+  }
 
-  Serial.println(currentAdc[1]);
+  const uint32_t RAMP_STEP_INTERVAL = 2; // Інтервал кроку (мс)
+  static uint32_t lastRampUpdate[2] = {0, 0};
+  static uint16_t currentAdc[2] = {0, 0};
+
+  // Serial.println(currentAdc[1]); // обережно з Serial всередині частих циклів, може гальмувати
 
   // Якщо двигуни вимкнені (або цільове значення в зоні зупинки), скидаємо плавний старт
   if (!isMotorsEnabled() || !isAdcInWorkingRange(targetAdc)) {
@@ -361,7 +366,6 @@ uint16_t getSoftStartAdc(uint8_t motorIndex, uint16_t targetAdc) {
 
   return currentAdc[motorIndex];
 }
-
 // Оновлює швидкість всіх двигунів.
 //
 // Якщо двигуни вимкнені, зупиняє їх.
@@ -485,8 +489,10 @@ void handleRollForm2() {
 //   HIGH — стіл обертається до першого спрацювання датчика положення
 //          (той самий принцип зупинки, що і в автоматичному режимі).
 void runManualMode() {
-  updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
-  updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
+  uint16_t adc1 = getSoftStartAdc(0, adcRead(ADC_CH_19));
+  uint16_t adc2 = getSoftStartAdc(1, adcRead(ADC_CH_22));
+  updateMotorSpeed(MOTOR_ROLL1, adc1);
+  updateMotorSpeed(MOTOR_ROLL2, adc2);
 
   if (isInputActive(IN_TABLE_ROTATE_CMD)) {
     updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
@@ -649,8 +655,12 @@ void runAutoMode() {
   bool cycleStartEdge = cycleStartPressed && !prevCycleStartPressed;
   prevCycleStartPressed = cycleStartPressed;
 
-  updateMotorSpeed(MOTOR_ROLL1, adcRead(ADC_CH_19));
-  updateMotorSpeed(MOTOR_ROLL2, adcRead(ADC_CH_22));
+  // Пропускаємо значення АЦП через фільтр плавного старту для моторів 0 і 1
+  uint16_t adc1 = getSoftStartAdc(0, adcRead(ADC_CH_19));
+  uint16_t adc2 = getSoftStartAdc(1, adcRead(ADC_CH_22));
+
+  updateMotorSpeed(MOTOR_ROLL1, adc1);
+  updateMotorSpeed(MOTOR_ROLL2, adc2);
 
   switch (state) {
   case AUTO_WAIT_START:
