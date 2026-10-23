@@ -351,9 +351,9 @@ uint16_t getSoftStartAdc(uint8_t motorIndex, uint16_t targetAdc) {
 
   if (currentAdc[motorIndex] < targetAdc) { // Збільшуємо оберти
     int16_t diff = targetAdc - currentAdc[motorIndex];
-    uint16_t step = (diff > 50) ? 25 : 10;
+    uint16_t step = (diff > 50) ? 75 : 10;
 
-    if (currentAdc[motorIndex] <= 20) {
+    if (currentAdc[motorIndex] < 20) {
       currentAdc[motorIndex] = 20;
     } else {
       currentAdc[motorIndex] += step;
