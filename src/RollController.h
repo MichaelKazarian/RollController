@@ -28,7 +28,7 @@
 
 #define IN_CYCLE_START       12  // IN12: запуск автоматичного циклу (LOW = натиснуто)
 // Кінцевики нижнього (робочого) положення пневмоциліндрів.
-#define IN_COLLET_LIMIT       2  // IN3: цанга досягла робочого положення
+#define IN_COLLET_LIMIT       2  // IN3: цанга затиснута
 #define IN_TABLE_FIX_LIMIT    4  // IN5: фіксація столу спрацювала
 #define IN_ROLL_FORM1_LIMIT   5  // IN7: вальцовка1 в робочому положенні
 #define IN_ROLL_FORM2_LIMIT   9  // IN9: вальцовка2 в робочому положенні
@@ -61,3 +61,5 @@
 #define TABLE_SPEED_500 122   // rpm, еквівалентний adcVal=500
 #define TABLE_SPEED_600 137   // rpm, еквівалентний adcVal=600
 #define TABLE_SPEED_800 180
+
+#define RETRACTION_TIMEOUT_MS 6000 // Захисний таймаут підйому циліндрів (мс)

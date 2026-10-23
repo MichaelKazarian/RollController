@@ -519,38 +519,68 @@ void raiseCylinders() {
   mcpWriteCached(OUT_ROLL_FORM2_OFF, HIGH);
 }
 
+// перевірка кінцевика та підйом циліндра
+inline void checkAndRetractCylinder(bool &retractedFlag,
+                                    uint8_t limitPin,
+                                    uint8_t outOn,
+                                    uint8_t outOff) {
+  if (!retractedFlag && isInputActive(limitPin)) {
+    mcpWriteCached(outOn, LOW);
+    mcpWriteCached(outOff, HIGH);
+    retractedFlag = true;
+  }
+}
+
+// Перевіряє, чи виконані умови для завершення підйому:
+// 1. Усі інші циліндри вже отримали команду на підйом.
+// 2. Кінцевик фіксації столу активний АБО спрацював захисний таймаут.
+inline bool isRetractionComplete(bool allOthersDone, uint32_t timer) {
+  bool timeoutExceeded = (millis() - timer > RETRACTION_TIMEOUT_MS);
+  return (allOthersDone && isInputActive(IN_TABLE_FIX_LIMIT)) || timeoutExceeded;
+}
+
+// перевірка умов завершення та підняття столу
+inline bool checkCompletionAndFinish(bool &colletFlag, bool &roll1Flag, bool &roll2Flag, uint32_t &timer) {
+  bool allOthersDone = colletFlag && roll1Flag && roll2Flag;
+
+  if (isRetractionComplete(allOthersDone, timer)) {
+    mcpWriteCached(OUT_TABLE_FIX_ON, LOW); // Підіймаємо фіксатор столу
+    mcpWriteCached(OUT_TABLE_FIX_OFF, HIGH);
+
+    colletFlag = false; // Скидаємо прапорці та таймер для наступного циклу
+    roll1Flag = false;
+    roll2Flag = false;
+    timer = 0;
+    return true; // Цикл підйому завершено
+  }
+  return false; // Ще чекаємо
+}
+
 // Обробляє фазу очікування кінцевиків: піднімає цангу, вальцовку1
 // і вальцовку2 одразу, щойно спрацював їхній власний кінцевик,
 // незалежно одна від одної. Фіксацію столу підіймає лише після
-// того, як усі три вже підняті — стіл має лишатись нерухомим,
-// поки триває обробка деталі.
-// Повертає true, якщо цикл підйому повністю завершено (можна
-// переходити в AUTO_WAIT_START).
+// того, як усі три вже підняті та спрацював кінцевик фіксації столу.
+//
+// Встановлено таймаут: якщо якийсь кінцевик
+// не спрацює через дребезг чи несправність, цикл не зависне назавжди,
+// а примусово завершиться й повернеться в очікування старту.
 bool handleCylinderRetraction() {
-  if (!colletRetracted && isInputActive(IN_COLLET_LIMIT)) {
-    mcpWriteCached(OUT_COLLET_ON, LOW);
-    mcpWriteCached(OUT_COLLET_OFF, HIGH);
-    colletRetracted = true;
-  }
-  if (!rollForm1Retracted && isInputActive(IN_ROLL_FORM1_LIMIT)) {
-    mcpWriteCached(OUT_ROLL_FORM1_ON, LOW);
-    mcpWriteCached(OUT_ROLL_FORM1_OFF, HIGH);
-    rollForm1Retracted = true;
-  }
-  if (!rollForm2Retracted && isInputActive(IN_ROLL_FORM2_LIMIT)) {
-    mcpWriteCached(OUT_ROLL_FORM2_ON, LOW);
-    mcpWriteCached(OUT_ROLL_FORM2_OFF, HIGH);
-    rollForm2Retracted = true;
-  }
+  static uint32_t waitLimitTimer = 0;
+  // Запускаємо таймер захисту при першому вході в стан очікування кінцевиків
+  if (waitLimitTimer == 0)  waitLimitTimer = millis();
 
-  if (colletRetracted && rollForm1Retracted && rollForm2Retracted &&
-      isInputActive(IN_TABLE_FIX_LIMIT)) {
-    mcpWriteCached(OUT_TABLE_FIX_ON, LOW);
-    mcpWriteCached(OUT_TABLE_FIX_OFF, HIGH);
-    colletRetracted = rollForm1Retracted = rollForm2Retracted = false;
+  // Підйом цанги та вальцовок
+  checkAndRetractCylinder(colletRetracted, IN_COLLET_LIMIT, OUT_COLLET_ON, OUT_COLLET_OFF);
+  checkAndRetractCylinder(rollForm1Retracted, IN_ROLL_FORM1_LIMIT, OUT_ROLL_FORM1_ON, OUT_ROLL_FORM1_OFF);
+  checkAndRetractCylinder(rollForm2Retracted, IN_ROLL_FORM2_LIMIT, OUT_ROLL_FORM2_ON, OUT_ROLL_FORM2_OFF);
+
+  // Перевіряємо умови завершення та фіксуємо результат
+  if (checkCompletionAndFinish(colletRetracted, rollForm1Retracted, rollForm2Retracted, waitLimitTimer)) {
     return true;
   }
-  return false;
+
+  // Не всі кінцевики спрацювали;
+  return false; //виходимо без блокування, перевіримо в наступному кадрі loop()
 }
 
 // Стани автоматичного циклу.
