@@ -337,8 +337,10 @@ inline bool isMotorsEnabled() {
 // Плавне наближення поточного значень АЦП до цільового (Soft Start) з кроком у 2 мс
 uint16_t getSoftStartAdc(uint8_t motorIndex, uint16_t targetAdc) {
   const uint32_t RAMP_STEP_INTERVAL = 2; // Інтервал кроку (мс)
-  static uint32_t lastRampUpdate[MOTOR_COUNT] = {0, 0, 0};
-  static uint16_t currentAdc[MOTOR_COUNT] = {0, 0, 0};
+  static uint32_t lastRampUpdate[MOTOR_COUNT-1] = {0, 0};
+  static uint16_t currentAdc[MOTOR_COUNT-1] = {0, 0};
+
+  Serial.println(currentAdc[1]);
 
   // Якщо двигуни вимкнені (або цільове значення в зоні зупинки), скидаємо плавний старт
   if (!isMotorsEnabled() || !isAdcInWorkingRange(targetAdc)) {
@@ -346,7 +348,7 @@ uint16_t getSoftStartAdc(uint8_t motorIndex, uint16_t targetAdc) {
     return 0;
   }
 
-  // Оновлюємо значення кожні 2 мс
+  // Оновлюємо значення кожні RAMP_STEP_INTERVAL
   if (millis() - lastRampUpdate[motorIndex] >= RAMP_STEP_INTERVAL) {
     lastRampUpdate[motorIndex] = millis();
 
@@ -378,8 +380,8 @@ void updateAllMotorSpeeds() {
       rawAdc[i] = adcRead(ADC_CHANNELS[i]);
     }
   }
-
-  for (uint8_t i = 0; i < MOTOR_COUNT; i++) {
+  Serial.println(1);
+  for (uint8_t i = 0; i < MOTOR_COUNT-1; i++) {
     // Пропускаємо через фільтр плавтого розгону перед оновленням швидкості
     uint16_t smoothAdc = getSoftStartAdc(i, rawAdc[i]);
     updateMotorSpeed(i, smoothAdc);
@@ -416,6 +418,7 @@ bool isTableAtPosition() {
 // зупинки столу.
 void rotateTableToHomePosition() {
   setMotorSpeedFixed(MOTOR_TABLE, TABLE_SPEED_800);
+  delay(300);
   bool leftHome = false;
   while (true) {
     readTablePosition();
