@@ -358,10 +358,13 @@ uint16_t getSoftStartAdc(uint8_t motorIndex, uint16_t targetAdc) {
     lastRampUpdate[motorIndex] = millis();
 
     if (currentAdc[motorIndex] < targetAdc) {
-      currentAdc[motorIndex]++;
+      currentAdc[motorIndex]+=25;
     } else if (currentAdc[motorIndex] > targetAdc) {
-      currentAdc[motorIndex]--;
+      currentAdc[motorIndex]-=10;
     }
+    Serial.print(currentAdc[1]);
+    Serial.print(" ");
+    Serial.println(targetAdc);
   }
 
   return currentAdc[motorIndex];
