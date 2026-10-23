@@ -17,9 +17,9 @@
                                  "."))
                    (setq-local company-clang-arguments (clang-src-dirs))
                    ;; (add-to-list 'company-backends '(company-etags company-clang))
-                   (add-hook 'after-save-hook
-                             (lambda ()
-                               (etags-tag-create (find-dirs-str))))
+                   ;; (add-hook 'after-save-hook
+                   ;;           (lambda ()
+                   ;;             (etags-tag-create (find-dirs-str))))
                    ))
          (eval . (git-gutter-mode))
          )))
