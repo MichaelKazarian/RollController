@@ -334,21 +334,56 @@ inline bool isMotorsEnabled() {
   return holdingRegisters[REG_MOTOR_ENABLE] == LOW;
 }
 
+// Плавне наближення поточного значень АЦП до цільового (Soft Start) з кроком у 2 мс
+uint16_t getSoftStartAdc(uint8_t motorIndex, uint16_t targetAdc) {
+  const uint32_t RAMP_STEP_INTERVAL = 2; // Інтервал кроку (мс)
+  static uint32_t lastRampUpdate[MOTOR_COUNT] = {0, 0, 0};
+  static uint16_t currentAdc[MOTOR_COUNT] = {0, 0, 0};
+
+  // Якщо двигуни вимкнені (або цільове значення в зоні зупинки), скидаємо плавний старт
+  if (!isMotorsEnabled() || !isAdcInWorkingRange(targetAdc)) {
+    currentAdc[motorIndex] = 0;
+    return 0;
+  }
+
+  // Оновлюємо значення кожні 2 мс
+  if (millis() - lastRampUpdate[motorIndex] >= RAMP_STEP_INTERVAL) {
+    lastRampUpdate[motorIndex] = millis();
+
+    if (currentAdc[motorIndex] < targetAdc) {
+      currentAdc[motorIndex]++;
+    } else if (currentAdc[motorIndex] > targetAdc) {
+      currentAdc[motorIndex]--;
+    }
+  }
+
+  return currentAdc[motorIndex];
+}
+
 // Оновлює швидкість всіх двигунів.
 //
 // Якщо двигуни вимкнені, зупиняє їх.
-// Інакше не частіше ніж раз на ADC_UPDATE_INTERVAL
-// зчитує потенціометри та оновлює швидкість кожного двигуна.
+// Інакше зчитує значення з потенціометрів та плавно наближає
+// швидкість кожного двигуна до цільового значення (soft start)
+// з кроком у 2 мс для запобігання ривкам.
 void updateAllMotorSpeeds() {
   static uint32_t lastAdcUpdate = 0;
-  uint16_t adc[MOTOR_COUNT] = {};
+  uint16_t rawAdc[MOTOR_COUNT] = {};
+
   if (isMotorsEnabled()) {
     if (millis() - lastAdcUpdate < ADC_UPDATE_INTERVAL)
       return;
     lastAdcUpdate = millis();
-    for (uint8_t i = 0; i < MOTOR_COUNT; i++) adc[i] = adcRead(ADC_CHANNELS[i]);
+    for (uint8_t i = 0; i < MOTOR_COUNT; i++) {
+      rawAdc[i] = adcRead(ADC_CHANNELS[i]);
+    }
   }
-  for (uint8_t i = 0; i < MOTOR_COUNT; i++) updateMotorSpeed(i, adc[i]);
+
+  for (uint8_t i = 0; i < MOTOR_COUNT; i++) {
+    // Пропускаємо через фільтр плавтого розгону перед оновленням швидкості
+    uint16_t smoothAdc = getSoftStartAdc(i, rawAdc[i]);
+    updateMotorSpeed(i, smoothAdc);
+  }
 }
 
 // Зупиняє генерацію STEP-імпульсів для всіх трьох моторів,
