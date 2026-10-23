@@ -341,11 +341,7 @@ uint16_t getSoftStartAdc(uint8_t motorIndex, uint16_t targetAdc) {
     return targetAdc;
   }
 
-  const uint32_t RAMP_STEP_INTERVAL = 2; // Інтервал кроку (мс)
-  static uint32_t lastRampUpdate[2] = {0, 0};
   static uint16_t currentAdc[2] = {0, 0};
-
-  // Serial.println(currentAdc[1]); // обережно з Serial всередині частих циклів, може гальмувати
 
   // Якщо двигуни вимкнені (або цільове значення в зоні зупинки), скидаємо плавний старт
   if (!isMotorsEnabled() || !isAdcInWorkingRange(targetAdc)) {
@@ -353,22 +349,34 @@ uint16_t getSoftStartAdc(uint8_t motorIndex, uint16_t targetAdc) {
     return 0;
   }
 
-  // Оновлюємо значення кожні RAMP_STEP_INTERVAL
-  if (millis() - lastRampUpdate[motorIndex] >= RAMP_STEP_INTERVAL) {
-    lastRampUpdate[motorIndex] = millis();
+  if (currentAdc[motorIndex] < targetAdc) { // Збільшуємо оберти
+    int16_t diff = targetAdc - currentAdc[motorIndex];
+    uint16_t step = (diff > 50) ? 25 : 10;
 
-    if (currentAdc[motorIndex] < targetAdc) {
-      currentAdc[motorIndex]+=25;
-    } else if (currentAdc[motorIndex] > targetAdc) {
-      currentAdc[motorIndex]-=10;
+    if (currentAdc[motorIndex] <= 20) {
+      currentAdc[motorIndex] = 20;
+    } else {
+      currentAdc[motorIndex] += step;
     }
-    Serial.print(currentAdc[1]);
-    Serial.print(" ");
-    Serial.println(targetAdc);
   }
+  else if (currentAdc[motorIndex] > targetAdc) { // Зменшуємо
+    int16_t diff = currentAdc[motorIndex] - targetAdc;
+    if (diff > 10) {
+      currentAdc[motorIndex] -= 10;
+    } else {
+      currentAdc[motorIndex] = targetAdc;
+    }
+  }
+  Serial.print("Motor ");
+  Serial.print(motorIndex);
+  Serial.print(" | Current: ");
+  Serial.print(currentAdc[motorIndex]);
+  Serial.print(" | Target: ");
+  Serial.println(targetAdc);
 
   return currentAdc[motorIndex];
 }
+
 // Оновлює швидкість всіх двигунів.
 //
 // Якщо двигуни вимкнені, зупиняє їх.
