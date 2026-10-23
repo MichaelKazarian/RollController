@@ -420,6 +420,7 @@ bool isManualMode() {
 void setComplementaryOutputs(uint8_t inCmd, uint8_t outOn, uint8_t outOff) {
   bool cmd = isInputActive(inCmd);
   mcpWriteCached(outOn, cmd);
+  delay(100);
   mcpWriteCached(outOff, !cmd);
 }
 
