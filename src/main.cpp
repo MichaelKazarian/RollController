@@ -202,7 +202,16 @@ void adcInit() {
 // =========================================================================
 // Керування системою
 //
+
+// Розкладає байт порту MCP23017 у holdingRegisters (1 біт = 1 регістр).
+static inline void unpackPort(uint8_t base, uint8_t portValue) {
+  for (uint8_t i = 0; i <= MCP_LAST_PIN; i++) {
+    holdingRegisters[base + i] = (portValue >> i) & 1;
+  }
+}
+
 // Зчитує стан усіх входів з двох MCP23017 у holdingRegisters.
+// Кожен порт читається однією I²C-транзакцією (разом 4 замість 28).
 //
 // Карта регістрів:
 //   REG_GPA1 (0..6)   <- MCP IN1: GPA0..GPA6
@@ -210,13 +219,10 @@ void adcInit() {
 //   REG_GPA2 (16..22) <- MCP IN2: GPA0..GPA6
 //   REG_GPB2 (24..30) <- MCP IN2: GPB0..GPB6
 void readRegisters() {
-  for (uint8_t i = 0; i <= MCP_LAST_PIN; i++) {
-    holdingRegisters[REG_GPA1 + i] = mcp_in1.digitalRead(i);
-    holdingRegisters[REG_GPB1 + i] = mcp_in1.digitalRead(i + GPA_SHIFT_B);
-
-    holdingRegisters[REG_GPA2 + i] = mcp_in2.digitalRead(i);
-    holdingRegisters[REG_GPB2 + i] = mcp_in2.digitalRead(i + GPA_SHIFT_B);
-  }
+  unpackPort(REG_GPA1, mcp_in1.readPort(MCP23017Port::A));
+  unpackPort(REG_GPB1, mcp_in1.readPort(MCP23017Port::B));
+  unpackPort(REG_GPA2, mcp_in2.readPort(MCP23017Port::A));
+  unpackPort(REG_GPB2, mcp_in2.readPort(MCP23017Port::B));
 }
 
 // Записує значення на вихід MCP23017 лише у разі його зміни.
