@@ -589,15 +589,15 @@ void lowerCylinders() {
 
 // Піднімає всі чотири пневмоциліндри (звільняє затискачі + вальцовки).
 void raiseCylinders() {
-  mcpWriteCached(OUT_COLLET_ON, LOW);
-  mcpWriteCached(OUT_TABLE_FIX_ON, LOW);
   mcpWriteCached(OUT_ROLL_FORM1_ON, LOW);
   mcpWriteCached(OUT_ROLL_FORM2_ON, LOW);
+  mcpWriteCached(OUT_COLLET_ON, LOW);
+  mcpWriteCached(OUT_TABLE_FIX_ON, LOW);
   delay(100);
-  mcpWriteCached(OUT_COLLET_OFF, HIGH);
-  mcpWriteCached(OUT_TABLE_FIX_OFF, HIGH);
   mcpWriteCached(OUT_ROLL_FORM1_OFF, HIGH);
   mcpWriteCached(OUT_ROLL_FORM2_OFF, HIGH);
+  mcpWriteCached(OUT_COLLET_OFF, HIGH);
+  mcpWriteCached(OUT_TABLE_FIX_OFF, HIGH);
 }
 
 // перевірка кінцевика та підйом циліндра
