@@ -29,7 +29,7 @@
 #define IN_CYCLE_START       12  // IN12: запуск автоматичного циклу (LOW = натиснуто)
 // Кінцевики нижнього (робочого) положення пневмоциліндрів.
 #define IN_COLLET_LIMIT       2  // IN3: цанга затиснута
-#define IN_TABLE_FIX_LIMIT    4  // IN5: фіксація столу спрацювала
+#define IN_TABLE_FIX_LIMIT    3  // IN5: фіксація столу спрацювала
 #define IN_ROLL_FORM1_LIMIT   5  // IN7: вальцовка1 в робочому положенні
 #define IN_ROLL_FORM2_LIMIT   9  // IN9: вальцовка2 в робочому положенні
 
@@ -38,7 +38,7 @@
 #define IN_MODE_AUTO         16  // IN15: автоматичний режим керування
 #define IN_TABLE_ROTATE_CMD  17  // IN16: команда обертання столу в ручному режимі
 #define IN_COLLET_CMD        1   // IN17: команда затиснути цангу (1) / розтиснути (0)
-#define IN_TABLE_FIX_CMD     3   // IN18: команда затиснути (другий затискач)
+#define IN_TABLE_FIX_CMD     4   // IN18: команда затиснути (другий затискач)
 #define IN_ROLL_FORM1_CMD    6   // IN19: команда вальцовка1
 #define IN_ROLL_FORM2_CMD    8   // IN20: команда вальцовка2
                                  // ЦАНГА 12, 13
