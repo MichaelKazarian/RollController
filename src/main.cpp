@@ -41,9 +41,9 @@ const uint8_t ADC_CHANNELS[] = { ADC_CH_19, ADC_CH_22, ADC_CH_23 };
 const uint16_t STEPS_PER_REV[MOTOR_COUNT] = {4000, 4000, 400};
 
 // Створюємо об'єкти для трьох мікросхем
-MCP23017 mcp_out = MCP23017(0x20); // Перша (буде 0x20)
-MCP23017 mcp_in1 = MCP23017(0x24); // Друга (буде 0x21)
-MCP23017 mcp_in2 = MCP23017(0x22);  // Третя (буде 0x22)
+MCP23017 mcp_out = MCP23017(0x20);
+MCP23017 mcp_in1 = MCP23017(0x24);
+MCP23017 mcp_in2 = MCP23017(0x22);
 // Кеш стану всіх 16 виходів MCP23017 для уникнення зайвих записів I²C.
 uint8_t outCache[16];
 
@@ -55,6 +55,9 @@ uint8_t holdingRegisters[REGS_SIZE] = {};
 bool colletRetracted = false;
 bool rollForm1Retracted = false;
 bool rollForm2Retracted = false;
+
+// Момент, коли циліндри були опущені і почалось очікування кінцевиків.
+uint32_t retractionStart = 0;
 
 void gpioInit() {
   // =========================================================================
@@ -367,12 +370,12 @@ uint16_t getSoftStartAdc(uint8_t motorIndex, uint16_t targetAdc) {
       currentAdc[motorIndex] = targetAdc;
     }
   }
-  Serial.print("Motor ");
-  Serial.print(motorIndex);
-  Serial.print(" | Current: ");
-  Serial.print(currentAdc[motorIndex]);
-  Serial.print(" | Target: ");
-  Serial.println(targetAdc);
+  // Serial.print("Motor ");
+  // Serial.print(motorIndex);
+  // Serial.print(" | Current: ");
+  // Serial.print(currentAdc[motorIndex]);
+  // Serial.print(" | Target: ");
+  // Serial.println(targetAdc);
 
   return currentAdc[motorIndex];
 }
@@ -586,29 +589,33 @@ inline void checkAndRetractCylinder(bool &retractedFlag,
   }
 }
 
-// Перевіряє, чи виконані умови для завершення підйому:
-// 1. Усі інші циліндри вже отримали команду на підйом.
-// 2. Кінцевик фіксації столу активний АБО спрацював захисний таймаут.
-inline bool isRetractionComplete(bool allOthersDone, uint32_t timer) {
-  bool timeoutExceeded = (millis() - timer > RETRACTION_TIMEOUT_MS);
-  return (allOthersDone && isInputActive(IN_TABLE_FIX_LIMIT)) || timeoutExceeded;
+// true, якщо від опускання циліндрів минув захисний таймаут.
+inline bool isRetractionTimedOut() {
+  return millis() - retractionStart > RETRACTION_TIMEOUT_MS;
 }
 
-// перевірка умов завершення та підняття столу
-inline bool checkCompletionAndFinish(bool &colletFlag, bool &roll1Flag, bool &roll2Flag, uint32_t &timer) {
-  bool allOthersDone = colletFlag && roll1Flag && roll2Flag;
+// Перевіряє умови завершення підйому і завершує цикл.
+// Нормальне завершення: цанга і обидві вальцовки підняті та спрацював
+// кінцевик фіксації столу.
+// Таймаут: примусово піднімаємо ВСІ циліндри, навіть якщо їхній
+// кінцевик так і не спрацював.
+inline bool checkCompletionAndFinish() {
+  bool allOthersDone = colletRetracted && rollForm1Retracted && rollForm2Retracted;
+  bool normalFinish  = allOthersDone && isInputActive(IN_TABLE_FIX_LIMIT);
 
-  if (isRetractionComplete(allOthersDone, timer)) {
-    mcpWriteCached(OUT_TABLE_FIX_ON, LOW); // Підіймаємо фіксатор столу
+  if (normalFinish) {
+    mcpWriteCached(OUT_TABLE_FIX_ON, LOW);
     mcpWriteCached(OUT_TABLE_FIX_OFF, HIGH);
-
-    colletFlag = false; // Скидаємо прапорці та таймер для наступного циклу
-    roll1Flag = false;
-    roll2Flag = false;
-    timer = 0;
-    return true; // Цикл підйому завершено
+  } else if (isRetractionTimedOut()) {
+    raiseCylinders();   // піднімає цангу, вальцовки і фіксатор столу
+  } else {
+    return false;       // ще чекаємо
   }
-  return false; // Ще чекаємо
+
+  colletRetracted = false;
+  rollForm1Retracted = false;
+  rollForm2Retracted = false;
+  return true;
 }
 
 // Обробляє фазу очікування кінцевиків: піднімає цангу, вальцовку1
@@ -620,22 +627,19 @@ inline bool checkCompletionAndFinish(bool &colletFlag, bool &roll1Flag, bool &ro
 // не спрацює через дребезг чи несправність, цикл не зависне назавжди,
 // а примусово завершиться й повернеться в очікування старту.
 bool handleCylinderRetraction() {
-  static uint32_t waitLimitTimer = 0;
-  // Запускаємо таймер захисту при першому вході в стан очікування кінцевиків
-  if (waitLimitTimer == 0)  waitLimitTimer = millis();
-
-  // Підйом цанги та вальцовок
   checkAndRetractCylinder(colletRetracted, IN_COLLET_LIMIT, OUT_COLLET_ON, OUT_COLLET_OFF);
   checkAndRetractCylinder(rollForm1Retracted, IN_ROLL_FORM1_LIMIT, OUT_ROLL_FORM1_ON, OUT_ROLL_FORM1_OFF);
   checkAndRetractCylinder(rollForm2Retracted, IN_ROLL_FORM2_LIMIT, OUT_ROLL_FORM2_ON, OUT_ROLL_FORM2_OFF);
 
-  // Перевіряємо умови завершення та фіксуємо результат
-  if (checkCompletionAndFinish(colletRetracted, rollForm1Retracted, rollForm2Retracted, waitLimitTimer)) {
-    return true;
+  static uint8_t lastLimit = 255;
+  uint8_t cur = holdingRegisters[IN_COLLET_LIMIT];
+  if (cur != lastLimit) {
+    lastLimit = cur;
+    Serial.print("COLLET_LIMIT=");
+    Serial.println(cur);
   }
 
-  // Не всі кінцевики спрацювали;
-  return false; //виходимо без блокування, перевіримо в наступному кадрі loop()
+  return checkCompletionAndFinish();
 }
 
 // Стани автоматичного циклу.
@@ -678,6 +682,10 @@ void runAutoMode() {
     if (!allCylinderLimitsReached() && cycleStartEdge) {
       rotateTableToHomePosition();
       lowerCylinders();
+      colletRetracted = false;
+      rollForm1Retracted = false;
+      rollForm2Retracted = false;
+      retractionStart = millis();   // відлік 6 с іде від моменту опускання
       state = AUTO_WAIT_LIMITS;
     }
     break;
