@@ -37,10 +37,10 @@
 #define IN_MODE_MANUAL       14  // IN14: ручний режим керування 
 #define IN_MODE_AUTO         16  // IN15: автоматичний режим керування
 #define IN_TABLE_ROTATE_CMD  17  // IN16: команда обертання столу в ручному режимі
-#define IN_COLLET_CMD        18  // IN17: команда затиснути цангу (1) / розтиснути (0)
-#define IN_TABLE_FIX_CMD     19  // IN18: команда затиснути (другий затискач)
-#define IN_ROLL_FORM1_CMD    20  // IN19: команда вальцовка1
-#define IN_ROLL_FORM2_CMD    21  // IN20: команда вальцовка2
+#define IN_COLLET_CMD        1   // IN17: команда затиснути цангу (1) / розтиснути (0)
+#define IN_TABLE_FIX_CMD     3   // IN18: команда затиснути (другий затискач)
+#define IN_ROLL_FORM1_CMD    6   // IN19: команда вальцовка1
+#define IN_ROLL_FORM2_CMD    8   // IN20: команда вальцовка2
                                  // ЦАНГА 12, 13
 #define OUT_COLLET_ON        13  // OUT3: цанга — "затиснути" (HIGH при затиску)
 #define OUT_COLLET_OFF       12  // OUT4: цанга — "розтиснути" (HIGH при розтиску)
