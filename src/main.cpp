@@ -541,11 +541,28 @@ bool allCylinderLimitsReached() {
 // зняття OFF), як у перевіреному робочому зразку. Після опускання —
 // здув деталі з цанги стисненим повітрям протягом 1 секунди.
 void lowerCylinders() {
+  // ---- Фіксація столу ----
+  readRegisters();
+  Serial.print(F("TableFix before: "));
+  Serial.print(holdingRegisters[IN_TABLE_FIX_LIMIT]); Serial.print(' ');
+  Serial.println(holdingRegisters[IN_TABLE_FIX_CMD]);
+
   mcpWriteCached(OUT_TABLE_FIX_ON,  HIGH);
   mcpWriteCached(OUT_TABLE_FIX_OFF, HIGH);
   delay(80);
   mcpWriteCached(OUT_TABLE_FIX_ON,  HIGH);
   mcpWriteCached(OUT_TABLE_FIX_OFF, LOW);
+
+  readRegisters();
+  Serial.print(F("TableFix after: "));
+  Serial.print(holdingRegisters[IN_TABLE_FIX_LIMIT]); Serial.print(' ');
+  Serial.println(holdingRegisters[IN_TABLE_FIX_CMD]);
+
+  // ---- Цанга ----
+  readRegisters();
+  Serial.print(F("Collet before: "));
+  Serial.print(holdingRegisters[IN_COLLET_LIMIT]); Serial.print(' ');
+  Serial.println(holdingRegisters[IN_COLLET_CMD]);
 
   mcpWriteCached(OUT_COLLET_ON,  HIGH);
   mcpWriteCached(OUT_COLLET_OFF, HIGH);
@@ -553,11 +570,33 @@ void lowerCylinders() {
   mcpWriteCached(OUT_COLLET_ON,  HIGH);
   mcpWriteCached(OUT_COLLET_OFF, LOW);
 
+  readRegisters();
+  Serial.print(F("Collet after: "));
+  Serial.print(holdingRegisters[IN_COLLET_LIMIT]); Serial.print(' ');
+  Serial.println(holdingRegisters[IN_COLLET_CMD]);
+
+  // ---- Вальцовка 1 ----
+  readRegisters();
+  Serial.print(F("Roll1 before: "));
+  Serial.print(holdingRegisters[IN_ROLL_FORM1_LIMIT]); Serial.print(' ');
+  Serial.println(holdingRegisters[IN_ROLL_FORM1_CMD]);
+
   mcpWriteCached(OUT_ROLL_FORM1_ON,  HIGH);
   mcpWriteCached(OUT_ROLL_FORM1_OFF, HIGH);
   delay(450);
   mcpWriteCached(OUT_ROLL_FORM1_ON,  HIGH);
   mcpWriteCached(OUT_ROLL_FORM1_OFF, LOW);
+
+  readRegisters();
+  Serial.print(F("Roll1 after: "));
+  Serial.print(holdingRegisters[IN_ROLL_FORM1_LIMIT]); Serial.print(' ');
+  Serial.println(holdingRegisters[IN_ROLL_FORM1_CMD]);
+
+  // ---- Вальцовка 2 ----
+  readRegisters();
+  Serial.print(F("Roll2 before: "));
+  Serial.print(holdingRegisters[IN_ROLL_FORM2_LIMIT]); Serial.print(' ');
+  Serial.println(holdingRegisters[IN_ROLL_FORM2_CMD]);
 
   mcpWriteCached(OUT_ROLL_FORM2_ON,  HIGH);
   mcpWriteCached(OUT_ROLL_FORM2_OFF, HIGH);
@@ -565,9 +604,23 @@ void lowerCylinders() {
   mcpWriteCached(OUT_ROLL_FORM2_ON,  HIGH);
   mcpWriteCached(OUT_ROLL_FORM2_OFF, LOW);
 
+  readRegisters();
+  Serial.print(F("Roll2 after: "));
+  Serial.print(holdingRegisters[IN_ROLL_FORM2_LIMIT]); Serial.print(' ');
+  Serial.println(holdingRegisters[IN_ROLL_FORM2_CMD]);
+
+  // ---- Здув ----
   mcpWriteCached(OUT_BLOW_OFF, HIGH); // здув деталі з цанги
-  delay(1000);                       // затримка виконання циклу, час здуву
+  delay(1000);
   mcpWriteCached(OUT_BLOW_OFF, LOW);
+
+  // Підсумок після здуву: усі циліндри вже мають стояти внизу
+  readRegisters();
+  Serial.print(F("END limits (tfix collet roll1 roll2): "));
+  Serial.print(holdingRegisters[IN_TABLE_FIX_LIMIT]); Serial.print(' ');
+  Serial.print(holdingRegisters[IN_COLLET_LIMIT]);    Serial.print(' ');
+  Serial.print(holdingRegisters[IN_ROLL_FORM1_LIMIT]); Serial.print(' ');
+  Serial.println(holdingRegisters[IN_ROLL_FORM2_LIMIT]);
 }
 
 // Піднімає всі чотири пневмоциліндри (звільняє затискачі + вальцовки).
