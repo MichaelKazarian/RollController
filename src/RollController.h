@@ -63,3 +63,4 @@
 #define TABLE_SPEED_800 180
 
 #define RETRACTION_TIMEOUT_MS 6000 // Захисний таймаут підйому циліндрів (мс)
+#define CYLINDER_DOWN_TIMEOUT_MS 2000
