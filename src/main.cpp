@@ -345,45 +345,37 @@ inline bool isMotorsEnabled() {
 
 // Плавне наближення поточного значень АЦП до цільового (Soft Start) для перших двох моторів
 uint16_t getSoftStartAdc(uint8_t motorIndex, uint16_t targetAdc) {
-  // Якщо це мотор столу (індекс 2) — плавний старт не потрібен, повертаємо як є
+  // Мотор столу (індекс 2) — плавний старт не потрібен
   if (motorIndex >= 2) {
     return targetAdc;
   }
 
   static uint16_t currentAdc[2] = {0, 0};
+  static uint32_t lastTick[2]   = {0, 0};
 
-  // Якщо цільове значення в зоні зупинки, скидаємо плавний старт
-  if (!isAdcInWorkingRange(targetAdc)) {
-    currentAdc[motorIndex] = 0;
-    return 0;
+  // Ціль у зоні зупинки означає "гальмуємо до 0", а не миттєвий стоп
+  uint16_t goal = isAdcInWorkingRange(targetAdc) ? targetAdc : 0;
+
+  uint32_t now = millis();
+  uint32_t ticks = (now - lastTick[motorIndex]) / SOFT_START_TICK_MS;
+  if (ticks == 0) {
+    return currentAdc[motorIndex];       // ще не час для наступного кроку
+  }
+  lastTick[motorIndex] = now;
+  if (ticks > SOFT_START_MAX_TICKS) ticks = SOFT_START_MAX_TICKS;
+
+  uint32_t cur = currentAdc[motorIndex];
+  if (cur < goal) {                      // розгін
+    if (cur < SOFT_START_MIN_ADC) cur = SOFT_START_MIN_ADC;
+    else                          cur += ticks * SOFT_START_UP_STEP;
+    if (cur > goal) cur = goal;
+  } else if (cur > goal) {               // гальмування
+    uint32_t dec = ticks * SOFT_START_DOWN_STEP;
+    cur = (cur > goal + dec) ? (cur - dec) : goal;
   }
 
-  if (currentAdc[motorIndex] < targetAdc) { // Збільшуємо оберти
-    int16_t diff = targetAdc - currentAdc[motorIndex];
-    uint16_t step = (diff > 50) ? 75 : 10;
-
-    if (currentAdc[motorIndex] < 20) {
-      currentAdc[motorIndex] = 20;
-    } else {
-      currentAdc[motorIndex] += step;
-    }
-  }
-  else if (currentAdc[motorIndex] > targetAdc) { // Зменшуємо
-    int16_t diff = currentAdc[motorIndex] - targetAdc;
-    if (diff > 10) {
-      currentAdc[motorIndex] -= 10;
-    } else {
-      currentAdc[motorIndex] = targetAdc;
-    }
-  }
-  // Serial.print("Motor ");
-  // Serial.print(motorIndex);
-  // Serial.print(" | Current: ");
-  // Serial.print(currentAdc[motorIndex]);
-  // Serial.print(" | Target: ");
-  // Serial.println(targetAdc);
-
-  return currentAdc[motorIndex];
+  currentAdc[motorIndex] = cur;
+  return cur;
 }
 
 // Оновлює швидкість всіх двигунів.

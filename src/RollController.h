@@ -20,6 +20,12 @@
 #define REG_MOTOR_ENABLE 0
 #define ADC_MAX_THRESHOLD 900
 
+#define SOFT_START_TICK_MS    5    // період кроку плавного старту
+#define SOFT_START_UP_STEP    3    // розгін: одиниць АЦП за тік
+#define SOFT_START_DOWN_STEP  4    // гальмування: одиниць АЦП за тік
+#define SOFT_START_MAX_TICKS  20   // обмеження після довгих блокувань loop()
+#define SOFT_START_MIN_ADC    20   // з цього значення стартуємо зі зупинки
+
 #define ADC_UPDATE_INTERVAL 0 // мс
 #define ADC_ZERO_THRESHOLD 10
 #define RPM_MIN 50
