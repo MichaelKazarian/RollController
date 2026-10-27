@@ -589,17 +589,43 @@ void lowerCylinders() {
   mcpWriteCached(OUT_BLOW_OFF, LOW);
 }
 
-// Піднімає всі чотири пневмоциліндри (звільняє затискачі + вальцовки).
-void raiseCylinders() {
-  mcpWriteCached(OUT_ROLL_FORM1_ON, LOW);
-  mcpWriteCached(OUT_ROLL_FORM2_ON, LOW);
-  mcpWriteCached(OUT_COLLET_ON, LOW);
-  mcpWriteCached(OUT_TABLE_FIX_ON, LOW);
+// Чекає верхній датчик циліндра і друкує результат.
+static bool waitCylinderUp(const __FlashStringHelper* name, uint8_t upReg) {
+  uint32_t t0 = millis();
+  while (millis() - t0 < CYLINDER_UP_TIMEOUT_MS) {
+    readRegisters();
+    if (isInputActive(upReg)) {
+      Serial.print(name);
+      Serial.print(F(" up in "));
+      Serial.print(millis() - t0);
+      Serial.println(F(" ms"));
+      return true;
+    }
+  }
+  Serial.print(name);
+  Serial.println(F(" TIMEOUT: up sensor not reached"));
+  return false;
+}
+
+// Піднімає один циліндр: знімає ON, через 100 мс подає OFF,
+// потім чекає верхній датчик.
+static bool raiseCylinder(const __FlashStringHelper* name,
+                          uint8_t outOn, uint8_t outOff, uint8_t upReg) {
+  Serial.print(F("Raising "));
+  Serial.println(name);
+
+  mcpWriteCached(outOn, LOW);
   delay(100);
-  mcpWriteCached(OUT_ROLL_FORM1_OFF, HIGH);
-  mcpWriteCached(OUT_ROLL_FORM2_OFF, HIGH);
-  mcpWriteCached(OUT_COLLET_OFF, HIGH);
-  mcpWriteCached(OUT_TABLE_FIX_OFF, HIGH);
+  mcpWriteCached(outOff, HIGH);
+
+  return waitCylinderUp(name, upReg);
+}
+
+void raiseCylinders() {
+  raiseCylinder(F("Roll2"),    OUT_ROLL_FORM2_ON, OUT_ROLL_FORM2_OFF, IN_ROLL_FORM2_UP);
+  raiseCylinder(F("Roll1"),    OUT_ROLL_FORM1_ON, OUT_ROLL_FORM1_OFF, IN_ROLL_FORM1_UP);
+  raiseCylinder(F("Collet"),   OUT_COLLET_ON,     OUT_COLLET_OFF,     IN_COLLET_UP);
+  raiseCylinder(F("TableFix"), OUT_TABLE_FIX_ON,  OUT_TABLE_FIX_OFF,  IN_TABLE_FIX_UP);
 }
 
 // перевірка кінцевика та підйом циліндра
@@ -704,14 +730,10 @@ void runAutoMode() {
 
   switch (state) {
   case AUTO_WAIT_START:
-    if (!allCylinderLimitsReached() && cycleStartEdge) {
+    if (cycleStartEdge) {
       rotateTableToHomePosition();
       lowerCylinders();
-      colletRetracted = false;
-      rollForm1Retracted = false;
-      rollForm2Retracted = false;
-      retractionStart = millis();   // відлік 6 с іде від моменту опускання
-      state = AUTO_WAIT_LIMITS;
+      raiseCylinders();
     }
     break;
 
