@@ -709,7 +709,6 @@ bool autoInitialized = false;
 //      підіймаються, двигуни вальцовки зупиняються, і цикл повертається
 //      в очікування нового старту.
 void runAutoMode() {
-  static AutoCycleState state = AUTO_WAIT_START;
   static bool prevCycleStartPressed = false;
 
   if (!autoInitialized) {
@@ -717,24 +716,20 @@ void runAutoMode() {
     autoInitialized = true;
   }
 
+  // Швидкість вальцовок за потенціометрами (з плавним стартом)
+  uint16_t adc1 = getSoftStartAdc(0, adcRead(ADC_CH_19));
+  uint16_t adc2 = getSoftStartAdc(1, adcRead(ADC_CH_22));
+  updateMotorSpeed(MOTOR_ROLL1, adc1);
+  updateMotorSpeed(MOTOR_ROLL2, adc2);
+
   bool cycleStartPressed = isInputActive(IN_CYCLE_START);
   bool cycleStartEdge = cycleStartPressed && !prevCycleStartPressed;
   prevCycleStartPressed = cycleStartPressed;
 
-  switch (state) {
-  case AUTO_WAIT_START:
-    if (cycleStartEdge) {
-      rotateTableToHomePosition();
-      lowerCylinders();
-      raiseCylinders();
-    }
-    break;
-
-  case AUTO_WAIT_LIMITS:
-    if (handleCylinderRetraction()) {
-      state = AUTO_WAIT_START;
-    }
-    break;
+  if (cycleStartEdge) {
+    rotateTableToHomePosition();
+    lowerCylinders();
+    raiseCylinders();
   }
 }
 
@@ -750,13 +745,6 @@ void handleOperatingMode() {
   bool manualMode = isInputActive(IN_MODE_MANUAL);
   bool autoMode   = isAutoMode();
 
-  // Пропускаємо значення АЦП через фільтр плавного старту для моторів 0 і 1
-  uint16_t adc1 = getSoftStartAdc(0, adcRead(ADC_CH_19));
-  uint16_t adc2 = getSoftStartAdc(1, adcRead(ADC_CH_22));
-
-  updateMotorSpeed(MOTOR_ROLL1, adc1);
-  updateMotorSpeed(MOTOR_ROLL2, adc2);
-  
   if (manualMode && autoMode) {
     autoInitialized = false;
     stopAllMotors();
