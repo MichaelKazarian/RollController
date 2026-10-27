@@ -19,13 +19,5 @@
 | Вальцовка 2             |     8 |     9 |
 
 
-Raising Roll2
-Roll2 up in 44 ms
-Raising Roll1
-Roll1 up in 2 ms
-Raising Release (OUT_COLLET)
-Release (OUT_COLLET) up in 74 ms
-Raising Clamp (OUT_TABLE_FIX)
-Clamp (OUT_TABLE_FIX) up in 64 ms
 
 
