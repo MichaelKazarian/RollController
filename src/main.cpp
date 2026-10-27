@@ -352,8 +352,8 @@ uint16_t getSoftStartAdc(uint8_t motorIndex, uint16_t targetAdc) {
 
   static uint16_t currentAdc[2] = {0, 0};
 
-  // Якщо двигуни вимкнені (або цільове значення в зоні зупинки), скидаємо плавний старт
-  if (!isMotorsEnabled() || !isAdcInWorkingRange(targetAdc)) {
+  // Якщо цільове значення в зоні зупинки, скидаємо плавний старт
+  if (!isAdcInWorkingRange(targetAdc)) {
     currentAdc[motorIndex] = 0;
     return 0;
   }
