@@ -29,12 +29,12 @@
 #define IN_CYCLE_START       12  // IN12: запуск автоматичного циклу (LOW = натиснуто)
 // Кінцевики нижнього (робочого) положення пневмоциліндрів.
 #define IN_COLLET_LIMIT       2  // IN3: цанга затиснута
-#define IN_TABLE_FIX_LIMIT    3  // IN5: фіксація столу спрацювала
+#define IN_TABLE_FIX_LIMIT    4  // IN5: фіксація столу спрацювала
 #define IN_ROLL_FORM1_LIMIT   5  // IN7: вальцовка1 в робочому положенні
 #define IN_ROLL_FORM2_LIMIT   9  // IN9: вальцовка2 в робочому положенні
 // Верхні датчики
 #define IN_COLLET_UP        1   // IN17: команда затиснути цангу (1) / розтиснути (0)
-#define IN_TABLE_FIX_UP     4   // IN18: команда затиснути (другий затискач)
+#define IN_TABLE_FIX_UP     3   // IN18: команда затиснути (другий затискач)
 #define IN_ROLL_FORM1_UP    6   // IN19: команда вальцовка1
 #define IN_ROLL_FORM2_UP    8   // IN20: команда вальцовка2
 // Перемикачі ручного режиму (другий MCP)
