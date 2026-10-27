@@ -481,8 +481,10 @@ bool isManualMode() {
 // cmdActive == false -> outOn=LOW,  outOff=HIGH
 void setComplementaryOutputs(uint8_t inCmd, uint8_t outOn, uint8_t outOff) {
   bool cmd = isInputActive(inCmd);
+  if (outCache[outOn] == cmd && outCache[outOff] == !cmd)
+    return;                        // стан уже потрібний, нічого не робимо
   mcpWriteCached(outOn, cmd);
-  delay(100);
+  delay(100);                      // пауза лише при реальній зміні
   mcpWriteCached(outOff, !cmd);
 }
 
