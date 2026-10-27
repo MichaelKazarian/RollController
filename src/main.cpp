@@ -33,8 +33,6 @@
 #include <MCP23017.h>
 #include "RollController.h"
 
-const uint8_t ADC_CHANNELS[] = { ADC_CH_19, ADC_CH_22, ADC_CH_23 };
-
 // STEPS_PER_REV — окреме значення для кожного мотора,
 // бо мотори/налаштування мікрокроку можуть відрізнятись.
 // Заповніть підтвердженими тестом значеннями для кожного мотора.
@@ -49,15 +47,6 @@ uint8_t outCache[16];
 
 #define REGS_SIZE 32
 uint8_t holdingRegisters[REGS_SIZE] = {};
-
-// Прапорці "циліндр вже піднятий у поточному циклі" — потрібні,
-// щоб кожен цикл підйому виконувався рівно один раз за прохід циклу.
-bool colletRetracted = false;
-bool rollForm1Retracted = false;
-bool rollForm2Retracted = false;
-
-// Момент, коли циліндри були опущені і почалось очікування кінцевиків.
-uint32_t retractionStart = 0;
 
 void gpioInit() {
   // =========================================================================
@@ -384,25 +373,25 @@ uint16_t getSoftStartAdc(uint8_t motorIndex, uint16_t targetAdc) {
 // Інакше зчитує значення з потенціометрів та плавно наближає
 // швидкість кожного двигуна до цільового значення (soft start)
 // з кроком у 2 мс для запобігання ривкам.
-void updateAllMotorSpeeds() {
-  static uint32_t lastAdcUpdate = 0;
-  uint16_t rawAdc[MOTOR_COUNT] = {};
+// void updateAllMotorSpeeds() {
+//   const uint8_t ADC_CHANNELS[] = { ADC_CH_19, ADC_CH_22, ADC_CH_23 };
+//   static uint32_t lastAdcUpdate = 0;
+//   uint16_t rawAdc[MOTOR_COUNT] = {};
 
-  if (isMotorsEnabled()) {
-    if (millis() - lastAdcUpdate < ADC_UPDATE_INTERVAL)
-      return;
-    lastAdcUpdate = millis();
-    for (uint8_t i = 0; i < MOTOR_COUNT; i++) {
-      rawAdc[i] = adcRead(ADC_CHANNELS[i]);
-    }
-  }
-  Serial.println(1);
-  for (uint8_t i = 0; i < MOTOR_COUNT-1; i++) {
-    // Пропускаємо через фільтр плавтого розгону перед оновленням швидкості
-    uint16_t smoothAdc = getSoftStartAdc(i, rawAdc[i]);
-    updateMotorSpeed(i, smoothAdc);
-  }
-}
+//   if (isMotorsEnabled()) {
+//     if (millis() - lastAdcUpdate < ADC_UPDATE_INTERVAL)
+//       return;
+//     lastAdcUpdate = millis();
+//     for (uint8_t i = 0; i < MOTOR_COUNT; i++) {
+//       rawAdc[i] = adcRead(ADC_CHANNELS[i]);
+//     }
+//   }
+//   for (uint8_t i = 0; i < MOTOR_COUNT-1; i++) {
+//     // Пропускаємо через фільтр плавтого розгону перед оновленням швидкості
+//     uint16_t smoothAdc = getSoftStartAdc(i, rawAdc[i]);
+//     updateMotorSpeed(i, smoothAdc);
+//   }
+// }
 
 // Зупиняє генерацію STEP-імпульсів для всіх трьох моторів,
 // встановлюючи їхній інтервал у 0 (ISR ігнорує канал з нульовим
@@ -516,15 +505,6 @@ void runManualMode() {
 
 // Automatic mode
 
-// Перевіряє, чи всі чотири пневмоциліндри (цанга, фіксація столу,
-// вальцовка1, вальцовка2) досягли робочого (опущеного) положення.
-bool allCylinderLimitsReached() {
-  return isInputActive(IN_COLLET_LIMIT) &&
-         isInputActive(IN_TABLE_FIX_LIMIT) &&
-         isInputActive(IN_ROLL_FORM1_LIMIT) &&
-         isInputActive(IN_ROLL_FORM2_LIMIT);
-}
-
 // Чекає, поки кінцевик циліндра стане активним (LOW), і друкує результат.
 static bool waitCylinderDown(const __FlashStringHelper* name, uint8_t limitReg) {
   uint32_t t0 = millis();
@@ -594,7 +574,7 @@ static bool waitCylinderUp(const __FlashStringHelper* name, uint8_t upReg) {
   return false;
 }
 
-// Піднімає один циліндр: знімає ON, через 100 мс подає OFF,
+// Піднімає один циліндр: знімає ON, через 50 мс подає OFF,
 // потім чекає верхній датчик.
 static bool raiseCylinder(const __FlashStringHelper* name,
                           uint8_t outOn, uint8_t outOff, uint8_t upReg) {
@@ -614,77 +594,6 @@ void raiseCylinders() {
   raiseCylinder(F("Clamp (OUT_TABLE_FIX)"), OUT_TABLE_FIX_ON, OUT_TABLE_FIX_OFF, IN_COLLET_UP);   // 1
   raiseCylinder(F("Release (OUT_COLLET)"),  OUT_COLLET_ON,    OUT_COLLET_OFF,    IN_TABLE_FIX_UP); // 3
 }
-
-// перевірка кінцевика та підйом циліндра
-inline void checkAndRetractCylinder(bool &retractedFlag,
-                                    uint8_t limitPin,
-                                    uint8_t outOn,
-                                    uint8_t outOff) {
-  if (!retractedFlag && isInputActive(limitPin)) {
-    mcpWriteCached(outOn, LOW);
-    mcpWriteCached(outOff, HIGH);
-    retractedFlag = true;
-  }
-}
-
-// true, якщо від опускання циліндрів минув захисний таймаут.
-inline bool isRetractionTimedOut() {
-  return millis() - retractionStart > RETRACTION_TIMEOUT_MS;
-}
-
-// Перевіряє умови завершення підйому і завершує цикл.
-// Нормальне завершення: цанга і обидві вальцовки підняті та спрацював
-// кінцевик фіксації столу.
-// Таймаут: примусово піднімаємо ВСІ циліндри, навіть якщо їхній
-// кінцевик так і не спрацював.
-inline bool checkCompletionAndFinish() {
-  bool allOthersDone = colletRetracted && rollForm1Retracted && rollForm2Retracted;
-  bool normalFinish  = allOthersDone && isInputActive(IN_TABLE_FIX_LIMIT);
-
-  if (normalFinish) {
-    mcpWriteCached(OUT_TABLE_FIX_ON, LOW);
-    mcpWriteCached(OUT_TABLE_FIX_OFF, HIGH);
-  } else if (isRetractionTimedOut()) {
-    raiseCylinders();   // піднімає цангу, вальцовки і фіксатор столу
-  } else {
-    return false;       // ще чекаємо
-  }
-
-  colletRetracted = false;
-  rollForm1Retracted = false;
-  rollForm2Retracted = false;
-  return true;
-}
-
-// Обробляє фазу очікування кінцевиків: піднімає цангу, вальцовку1
-// і вальцовку2 одразу, щойно спрацював їхній власний кінцевик,
-// незалежно одна від одної. Фіксацію столу підіймає лише після
-// того, як усі три вже підняті та спрацював кінцевик фіксації столу.
-//
-// Встановлено таймаут: якщо якийсь кінцевик
-// не спрацює через дребезг чи несправність, цикл не зависне назавжди,
-// а примусово завершиться й повернеться в очікування старту.
-bool handleCylinderRetraction() {
-  checkAndRetractCylinder(colletRetracted, IN_COLLET_LIMIT, OUT_COLLET_ON, OUT_COLLET_OFF);
-  checkAndRetractCylinder(rollForm1Retracted, IN_ROLL_FORM1_LIMIT, OUT_ROLL_FORM1_ON, OUT_ROLL_FORM1_OFF);
-  checkAndRetractCylinder(rollForm2Retracted, IN_ROLL_FORM2_LIMIT, OUT_ROLL_FORM2_ON, OUT_ROLL_FORM2_OFF);
-
-  static uint8_t lastLimit = 255;
-  uint8_t cur = holdingRegisters[IN_COLLET_LIMIT];
-  if (cur != lastLimit) {
-    lastLimit = cur;
-    // Serial.print("COLLET_LIMIT=");
-    // Serial.println(cur);
-  }
-
-  return checkCompletionAndFinish();
-}
-
-// Стани автоматичного циклу.
-enum AutoCycleState : uint8_t {
-  AUTO_WAIT_START,      // очікуємо натискання IN_CYCLE_START
-  AUTO_WAIT_LIMITS,     // циліндри опущені, чекаємо всі 4 кінцевики
-};
 
 bool autoInitialized = false;
 
@@ -723,7 +632,7 @@ void runAutoMode() {
 // безпечно зупиняємо всі мотори, а не намагаємось вгадати пріоритет.
 // Так само зупиняємо мотори, якщо жоден режим не обраний.
 void handleOperatingMode() {
-  bool manualMode = isInputActive(IN_MODE_MANUAL);
+  bool manualMode = isManualMode();
   bool autoMode   = isAutoMode();
 
   // Швидкість вальцовок за потенціометрами (з плавним стартом)
@@ -767,6 +676,5 @@ void setup() {
 void loop() {
   readRegisters();
   // printRegisters();
-  //writeRegisters();
   handleOperatingMode();
 }

@@ -74,6 +74,5 @@
 #define TABLE_SPEED_600 137   // rpm, еквівалентний adcVal=600
 #define TABLE_SPEED_800 180
 
-#define RETRACTION_TIMEOUT_MS 6000 // Захисний таймаут підйому циліндрів (мс)
 #define CYLINDER_DOWN_TIMEOUT_MS 2000
 #define CYLINDER_UP_TIMEOUT_MS 2000
