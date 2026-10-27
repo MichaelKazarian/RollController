@@ -622,10 +622,10 @@ static bool raiseCylinder(const __FlashStringHelper* name,
 }
 
 void raiseCylinders() {
-  raiseCylinder(F("Roll2"), OUT_ROLL_FORM2_ON, OUT_ROLL_FORM2_OFF, IN_ROLL_FORM2_UP); // 8
   raiseCylinder(F("Roll1"), OUT_ROLL_FORM1_ON, OUT_ROLL_FORM1_OFF, IN_ROLL_FORM1_UP); // 6
-  raiseCylinder(F("Release (OUT_COLLET)"), OUT_COLLET_ON, OUT_COLLET_OFF, IN_TABLE_FIX_UP); // 3
-  raiseCylinder(F("Clamp (OUT_TABLE_FIX)"), OUT_TABLE_FIX_ON, OUT_TABLE_FIX_OFF, IN_COLLET_UP); // 1
+  raiseCylinder(F("Roll2"), OUT_ROLL_FORM2_ON, OUT_ROLL_FORM2_OFF, IN_ROLL_FORM2_UP); // 8
+  raiseCylinder(F("Clamp (OUT_TABLE_FIX)"), OUT_TABLE_FIX_ON, OUT_TABLE_FIX_OFF, IN_COLLET_UP);   // 1
+  raiseCylinder(F("Release (OUT_COLLET)"),  OUT_COLLET_ON,    OUT_COLLET_OFF,    IN_TABLE_FIX_UP); // 3
 }
 
 // перевірка кінцевика та підйом циліндра
