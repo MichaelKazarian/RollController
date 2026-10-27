@@ -578,8 +578,8 @@ static bool lowerCylinder(const __FlashStringHelper* name,
 // зняття OFF), як у перевіреному робочому зразку. Після опускання —
 // здув деталі з цанги стисненим повітрям протягом 1 секунди.
 void lowerCylinders() {
-  lowerCylinder(F("Clamp (OUT_TABLE_FIX)"), OUT_TABLE_FIX_ON, OUT_TABLE_FIX_OFF, 80, IN_COLLET_LIMIT); // 2
   lowerCylinder(F("Release (OUT_COLLET)"), OUT_COLLET_ON, OUT_COLLET_OFF, 80, IN_TABLE_FIX_LIMIT); // 4
+  lowerCylinder(F("Clamp (OUT_TABLE_FIX)"), OUT_TABLE_FIX_ON, OUT_TABLE_FIX_OFF, 80, IN_COLLET_LIMIT); // 2
   lowerCylinder(F("Roll1"), OUT_ROLL_FORM1_ON, OUT_ROLL_FORM1_OFF, 450, IN_ROLL_FORM1_LIMIT); // 5
   lowerCylinder(F("Roll2"), OUT_ROLL_FORM2_ON, OUT_ROLL_FORM2_OFF, 450, IN_ROLL_FORM2_LIMIT); // 9
 
