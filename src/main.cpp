@@ -721,13 +721,6 @@ void runAutoMode() {
   bool cycleStartEdge = cycleStartPressed && !prevCycleStartPressed;
   prevCycleStartPressed = cycleStartPressed;
 
-  // Пропускаємо значення АЦП через фільтр плавного старту для моторів 0 і 1
-  uint16_t adc1 = getSoftStartAdc(0, adcRead(ADC_CH_19));
-  uint16_t adc2 = getSoftStartAdc(1, adcRead(ADC_CH_22));
-
-  updateMotorSpeed(MOTOR_ROLL1, adc1);
-  updateMotorSpeed(MOTOR_ROLL2, adc2);
-
   switch (state) {
   case AUTO_WAIT_START:
     if (cycleStartEdge) {
@@ -757,6 +750,13 @@ void handleOperatingMode() {
   bool manualMode = isInputActive(IN_MODE_MANUAL);
   bool autoMode   = isAutoMode();
 
+  // Пропускаємо значення АЦП через фільтр плавного старту для моторів 0 і 1
+  uint16_t adc1 = getSoftStartAdc(0, adcRead(ADC_CH_19));
+  uint16_t adc2 = getSoftStartAdc(1, adcRead(ADC_CH_22));
+
+  updateMotorSpeed(MOTOR_ROLL1, adc1);
+  updateMotorSpeed(MOTOR_ROLL2, adc2);
+  
   if (manualMode && autoMode) {
     autoInitialized = false;
     stopAllMotors();
