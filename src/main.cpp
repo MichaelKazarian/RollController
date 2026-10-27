@@ -408,8 +408,8 @@ void updateAllMotorSpeeds() {
 // встановлюючи їхній інтервал у 0 (ISR ігнорує канал з нульовим
 // stepInterval — див. timer1Init/ISR(TIMER1_COMPA_vect)).
 void stopAllMotors() {
-  updateMotorSpeed(MOTOR_ROLL1, MOTOR_STOP);
-  updateMotorSpeed(MOTOR_ROLL2, MOTOR_STOP);
+  updateMotorSpeed(MOTOR_ROLL1, getSoftStartAdc(0, 0));
+  updateMotorSpeed(MOTOR_ROLL2, getSoftStartAdc(1, 0));
   updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
 }
 
