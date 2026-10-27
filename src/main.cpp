@@ -578,10 +578,10 @@ static bool lowerCylinder(const __FlashStringHelper* name,
 // зняття OFF), як у перевіреному робочому зразку. Після опускання —
 // здув деталі з цанги стисненим повітрям протягом 1 секунди.
 void lowerCylinders() {
-  lowerCylinder(F("TableFix"), OUT_TABLE_FIX_ON,  OUT_TABLE_FIX_OFF,  80,  IN_TABLE_FIX_LIMIT);
-  lowerCylinder(F("Collet"),   OUT_COLLET_ON,     OUT_COLLET_OFF,     80,  IN_COLLET_LIMIT);
-  lowerCylinder(F("Roll1"),    OUT_ROLL_FORM1_ON, OUT_ROLL_FORM1_OFF, 450, IN_ROLL_FORM1_LIMIT);
-  lowerCylinder(F("Roll2"),    OUT_ROLL_FORM2_ON, OUT_ROLL_FORM2_OFF, 450, IN_ROLL_FORM2_LIMIT);
+  lowerCylinder(F("Clamp (OUT_TABLE_FIX)"), OUT_TABLE_FIX_ON, OUT_TABLE_FIX_OFF, 80, IN_COLLET_LIMIT); // 2
+  lowerCylinder(F("Release (OUT_COLLET)"), OUT_COLLET_ON, OUT_COLLET_OFF, 80, IN_TABLE_FIX_LIMIT); // 4
+  lowerCylinder(F("Roll1"), OUT_ROLL_FORM1_ON, OUT_ROLL_FORM1_OFF, 450, IN_ROLL_FORM1_LIMIT); // 5
+  lowerCylinder(F("Roll2"), OUT_ROLL_FORM2_ON, OUT_ROLL_FORM2_OFF, 450, IN_ROLL_FORM2_LIMIT); // 9
 
   Serial.println(F("Blow"));
   mcpWriteCached(OUT_BLOW_OFF, HIGH); // здув деталі з цанги
@@ -622,10 +622,10 @@ static bool raiseCylinder(const __FlashStringHelper* name,
 }
 
 void raiseCylinders() {
-  raiseCylinder(F("Roll2"),    OUT_ROLL_FORM2_ON, OUT_ROLL_FORM2_OFF, IN_ROLL_FORM2_UP);
-  raiseCylinder(F("Roll1"),    OUT_ROLL_FORM1_ON, OUT_ROLL_FORM1_OFF, IN_ROLL_FORM1_UP);
-  raiseCylinder(F("Collet"),   OUT_COLLET_ON,     OUT_COLLET_OFF,     IN_COLLET_UP);
-  raiseCylinder(F("TableFix"), OUT_TABLE_FIX_ON,  OUT_TABLE_FIX_OFF,  IN_TABLE_FIX_UP);
+  raiseCylinder(F("Roll2"), OUT_ROLL_FORM2_ON, OUT_ROLL_FORM2_OFF, IN_ROLL_FORM2_UP); // 8
+  raiseCylinder(F("Roll1"), OUT_ROLL_FORM1_ON, OUT_ROLL_FORM1_OFF, IN_ROLL_FORM1_UP); // 6
+  raiseCylinder(F("Release (OUT_COLLET)"), OUT_COLLET_ON, OUT_COLLET_OFF, IN_TABLE_FIX_UP); // 3
+  raiseCylinder(F("Clamp (OUT_TABLE_FIX)"), OUT_TABLE_FIX_ON, OUT_TABLE_FIX_OFF, IN_COLLET_UP); // 1
 }
 
 // перевірка кінцевика та підйом циліндра
