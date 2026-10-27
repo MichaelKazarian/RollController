@@ -407,11 +407,11 @@ void updateAllMotorSpeeds() {
 // Зупиняє генерацію STEP-імпульсів для всіх трьох моторів,
 // встановлюючи їхній інтервал у 0 (ISR ігнорує канал з нульовим
 // stepInterval — див. timer1Init/ISR(TIMER1_COMPA_vect)).
-void stopAllMotors() {
-  updateMotorSpeed(MOTOR_ROLL1, getSoftStartAdc(0, 0));
-  updateMotorSpeed(MOTOR_ROLL2, getSoftStartAdc(1, 0));
-  updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
-}
+// void stopAllMotors() {
+//   updateMotorSpeed(MOTOR_ROLL1, getSoftStartAdc(0, 0));
+//   updateMotorSpeed(MOTOR_ROLL2, getSoftStartAdc(1, 0));
+//   updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
+// }
 
 inline void readTablePosition() {
     holdingRegisters[IN_TABLE_POSITION] =
@@ -503,11 +503,6 @@ void handleRollForm2() {
 //   HIGH — стіл обертається до першого спрацювання датчика положення
 //          (той самий принцип зупинки, що і в автоматичному режимі).
 void runManualMode() {
-  uint16_t adc1 = getSoftStartAdc(0, adcRead(ADC_CH_19));
-  uint16_t adc2 = getSoftStartAdc(1, adcRead(ADC_CH_22));
-  updateMotorSpeed(MOTOR_ROLL1, adc1);
-  updateMotorSpeed(MOTOR_ROLL2, adc2);
-
   if (isInputActive(IN_TABLE_ROTATE_CMD)) {
     updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
   } else {
@@ -708,12 +703,6 @@ void runAutoMode() {
     autoInitialized = true;
   }
 
-  // Швидкість вальцовок за потенціометрами (з плавним стартом)
-  uint16_t adc1 = getSoftStartAdc(0, adcRead(ADC_CH_19));
-  uint16_t adc2 = getSoftStartAdc(1, adcRead(ADC_CH_22));
-  updateMotorSpeed(MOTOR_ROLL1, adc1);
-  updateMotorSpeed(MOTOR_ROLL2, adc2);
-
   bool cycleStartPressed = isInputActive(IN_CYCLE_START);
   bool cycleStartEdge = cycleStartPressed && !prevCycleStartPressed;
   prevCycleStartPressed = cycleStartPressed;
@@ -737,17 +726,21 @@ void handleOperatingMode() {
   bool manualMode = isInputActive(IN_MODE_MANUAL);
   bool autoMode   = isAutoMode();
 
-  if (manualMode && autoMode) {
+  // Швидкість вальцовок за потенціометрами (з плавним стартом)
+  updateMotorSpeed(MOTOR_ROLL1, getSoftStartAdc(0, adcRead(ADC_CH_19)));
+  updateMotorSpeed(MOTOR_ROLL2, getSoftStartAdc(1, adcRead(ADC_CH_22)));
+
+  if (manualMode && autoMode) {          // конфлікт режимів
     autoInitialized = false;
-    stopAllMotors();
+    updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
   } else if (manualMode) {
     autoInitialized = false;
     runManualMode();
   } else if (autoMode) {
     runAutoMode();
-  } else {
+  } else {                               // жоден режим не обраний
     autoInitialized = false;
-    stopAllMotors();
+    updateMotorSpeed(MOTOR_TABLE, MOTOR_STOP);
   }
 }
 
