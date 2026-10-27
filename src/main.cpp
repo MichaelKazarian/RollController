@@ -567,12 +567,12 @@ static bool lowerCylinder(const __FlashStringHelper* name,
 void lowerCylinders() {
   lowerCylinder(F("Release (OUT_COLLET)"), OUT_COLLET_ON, OUT_COLLET_OFF, 80, IN_TABLE_FIX_LIMIT); // 4
   lowerCylinder(F("Clamp (OUT_TABLE_FIX)"), OUT_TABLE_FIX_ON, OUT_TABLE_FIX_OFF, 80, IN_COLLET_LIMIT); // 2
-  lowerCylinder(F("Roll1"), OUT_ROLL_FORM1_ON, OUT_ROLL_FORM1_OFF, 450, IN_ROLL_FORM1_LIMIT); // 5
-  lowerCylinder(F("Roll2"), OUT_ROLL_FORM2_ON, OUT_ROLL_FORM2_OFF, 450, IN_ROLL_FORM2_LIMIT); // 9
+  lowerCylinder(F("Roll1"), OUT_ROLL_FORM1_ON, OUT_ROLL_FORM1_OFF, 200, IN_ROLL_FORM1_LIMIT); // 5
+  lowerCylinder(F("Roll2"), OUT_ROLL_FORM2_ON, OUT_ROLL_FORM2_OFF, 200, IN_ROLL_FORM2_LIMIT); // 9
 
-  Serial.println(F("Blow"));
+  // Serial.println(F("Blow"));
   mcpWriteCached(OUT_BLOW_OFF, HIGH); // здув деталі з цанги
-  delay(1000);
+  delay(700);
   mcpWriteCached(OUT_BLOW_OFF, LOW);
 }
 
@@ -582,15 +582,15 @@ static bool waitCylinderUp(const __FlashStringHelper* name, uint8_t upReg) {
   while (millis() - t0 < CYLINDER_UP_TIMEOUT_MS) {
     readRegisters();
     if (isInputActive(upReg)) {
-      Serial.print(name);
-      Serial.print(F(" up in "));
-      Serial.print(millis() - t0);
-      Serial.println(F(" ms"));
+      // Serial.print(name);
+      // Serial.print(F(" up in "));
+      // Serial.print(millis() - t0);
+      // Serial.println(F(" ms"));
       return true;
     }
   }
-  Serial.print(name);
-  Serial.println(F(" TIMEOUT: up sensor not reached"));
+  // Serial.print(name);
+  // Serial.println(F(" TIMEOUT: up sensor not reached"));
   return false;
 }
 
@@ -598,11 +598,11 @@ static bool waitCylinderUp(const __FlashStringHelper* name, uint8_t upReg) {
 // потім чекає верхній датчик.
 static bool raiseCylinder(const __FlashStringHelper* name,
                           uint8_t outOn, uint8_t outOff, uint8_t upReg) {
-  Serial.print(F("Raising "));
-  Serial.println(name);
+  // Serial.print(F("Raising "));
+  // Serial.println(name);
 
   mcpWriteCached(outOn, LOW);
-  delay(100);
+  delay(50);
   mcpWriteCached(outOff, HIGH);
 
   return waitCylinderUp(name, upReg);
@@ -673,8 +673,8 @@ bool handleCylinderRetraction() {
   uint8_t cur = holdingRegisters[IN_COLLET_LIMIT];
   if (cur != lastLimit) {
     lastLimit = cur;
-    Serial.print("COLLET_LIMIT=");
-    Serial.println(cur);
+    // Serial.print("COLLET_LIMIT=");
+    // Serial.println(cur);
   }
 
   return checkCompletionAndFinish();
